@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 
-export function useBalance() {
-    const { address } = useAccount();
+const BASE_URL = "http://localhost:3000";
+
+export function useBalance(address) {
     const [balance, setBalance] = useState(null);
 
     useEffect(() => {
@@ -10,7 +10,7 @@ export function useBalance() {
 
         const fetchBalance = async () => {
             try {
-                const res = await fetch(`http://localhost:3000/balance/${address}`);
+                const res = await fetch(`${BASE_URL}/balance/${address}`);
                 const data = await res.json();
 
                 setBalance(data.balance);
@@ -21,8 +21,7 @@ export function useBalance() {
 
         fetchBalance();
 
-        const interval = setInterval(fetchBalance, 5000); // refresh
-
+        const interval = setInterval(fetchBalance, 4000);
         return () => clearInterval(interval);
 
     }, [address]);
