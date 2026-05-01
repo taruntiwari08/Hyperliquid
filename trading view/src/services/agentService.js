@@ -2,34 +2,92 @@ import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
 import { createWalletClient, custom } from "viem";
 import { arbitrum } from "viem/chains";
 
-// ✅ pick MetaMask specifically (avoid Phantom hijack)
+const BASE_URL = "http://localhost:3000";
+
 const getMetaMaskProvider = () => {
     if (!window.ethereum) {
         throw new Error("No wallet found");
     }
 
-    // multiple wallets installed
     if (window.ethereum.providers) {
-        const metamask = window.ethereum.providers.find(
-            (p) => p.isMetaMask
-        );
+        const metamask = window.ethereum.providers.find((p) => p.isMetaMask);
         if (metamask) return metamask;
     }
 
-    // single provider case
     if (window.ethereum.isMetaMask) {
         return window.ethereum;
     }
 
-    throw new Error("MetaMask not found. Disable Phantom or select MetaMask.");
+    throw new Error("MetaMask not found");
 };
 
-export const approveAgent = async (agentAddress) => {
+// =====================================
+// CREATE OR GET USER AGENT FROM BACKEND
+// =====================================
+export async function createOrGetAgent(userAddress) {
+    const res = await fetch(`${BASE_URL}/agent/create`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            userAddress,
+        }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data?.error || "Failed to create agent");
+    }
+
+    return data;
+}
+
+// =====================================
+// GET EXISTING AGENT
+// =====================================
+export async function getAgent(userAddress) {
+    const res = await fetch(`${BASE_URL}/agent/${userAddress}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data?.error || "Failed to get agent");
+    }
+
+    return data;
+}
+
+// =====================================
+// MARK AGENT APPROVED IN DB
+// =====================================
+export async function markAgentApproved(userAddress) {
+    const res = await fetch(`${BASE_URL}/agent/approved`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            userAddress,
+        }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data?.error || "Failed to mark agent approved");
+    }
+
+    return data;
+}
+
+// =====================================
+// APPROVE AGENT ON HYPERLIQUID
+// =====================================
+export async function approveAgent(agentAddress, agentName) {
     try {
-        // ✅ Step 1: force MetaMask provider
         const provider = getMetaMaskProvider();
 
-        // ✅ Step 2: request account from MetaMask
         const accounts = await provider.request({
             method: "eth_requestAccounts",
         });
@@ -40,7 +98,6 @@ export const approveAgent = async (agentAddress) => {
             throw new Error("No account connected");
         }
 
-        // ✅ Step 3: create wallet client (IMPORTANT)
         const wallet = createWalletClient({
             chain: arbitrum,
             transport: custom(provider),
@@ -52,26 +109,14 @@ export const approveAgent = async (agentAddress) => {
             wallet,
         });
 
-        // ✅ Step 4: approve agent (triggers MetaMask popup)
         await client.approveAgent({
             agentAddress,
-            agentName: "bigrock-agent",
+            agentName,
         });
 
         return { success: true };
-
     } catch (err) {
-        console.error("APPROVE ERROR:", err);
-
-        // 👇 better UX errors
-        if (err.message.includes("MetaMask not found")) {
-            alert("Please use MetaMask (disable Phantom wallet)");
-        }
-
-        if (err.message.includes("User rejected")) {
-            alert("❌ Signature rejected");
-        }
-
+        console.error("APPROVE AGENT ERROR:", err);
         throw err;
     }
-};
+}

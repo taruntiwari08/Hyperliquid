@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
+
 import { usePrices } from "../hooks/usePrices";
-import { placeTrade } from "../services/tradeService";
-import { approveAgent } from "../services/agentService";
-import { approveBuilderFee } from "../services/builderService";
 import { useBalance } from "../hooks/useBalance";
+
+import { placeTrade } from "../services/tradeService";
+import {
+    createOrGetAgent,
+    approveAgent,
+    markAgentApproved,
+} from "../services/agentService";
+
+import { approveBuilderFee } from "../services/builderService";
 
 const TradePanel = () => {
     const { isConnected, address } = useAccount();
@@ -21,44 +28,61 @@ const TradePanel = () => {
     const [coin, setCoin] = useState("BTC");
 
     const [loading, setLoading] = useState(false);
-    const [approving, setApproving] = useState(false);
-    const [approvingBuilder, setApprovingBuilder] = useState(false);
 
+    const [agentLoading, setAgentLoading] = useState(false);
+    const [approvingAgent, setApprovingAgent] = useState(false);
     const [agentApproved, setAgentApproved] = useState(false);
-    const [builderApproved, setBuilderApproved] = useState(false);
+    const [agentData, setAgentData] = useState(null);
 
-    const AGENT_ADDRESS = "0x4A04b217a88BAEEEbc6A726A6411Ce2A74176fC2";
+    const [approvingBuilder, setApprovingBuilder] = useState(false);
+    const [builderApproved, setBuilderApproved] = useState(false);
 
     const BUILDER_ADDRESS = "0xB7c94Ac7C1C16744E9f3cDDEC09F54920D2C39B8";
 
-    // ✅ Change this whenever you change backend builder fee.
-    // Backend f: 50 = 0.05%
+    // Backend f: 100 = 0.1%
     const BUILDER_FEE_RATE = "0.1%";
-
-    // ✅ Bump this if you ever want to force re-approval.
     const BUILDER_APPROVAL_VERSION = "v1";
-
-    const builderFeeRateDecimal = 0.001; // 0.1%
+    const builderFeeRateDecimal = 0.001;
 
     const builderApprovalKey = address
         ? `builderApproved_${address}_${BUILDER_ADDRESS}_${BUILDER_FEE_RATE}_${BUILDER_APPROVAL_VERSION}`
         : null;
 
+    // =====================================
+    // LOAD / CREATE USER-SPECIFIC AGENT
+    // =====================================
     useEffect(() => {
-        if (!address) {
-            setAgentApproved(false);
-            setBuilderApproved(false);
-            return;
-        }
+        const setupAgent = async () => {
+            try {
+                if (!address) {
+                    setAgentData(null);
+                    setAgentApproved(false);
+                    setBuilderApproved(false);
+                    return;
+                }
 
-        const savedAgent = localStorage.getItem(`agentApproved_${address}`);
+                setAgentLoading(true);
 
-        const savedBuilder = builderApprovalKey
-            ? localStorage.getItem(builderApprovalKey)
-            : null;
+                const agent = await createOrGetAgent(address);
 
-        setAgentApproved(savedAgent === "true");
-        setBuilderApproved(savedBuilder === "true");
+                setAgentData(agent);
+                setAgentApproved(Boolean(agent?.isApproved));
+
+                const savedBuilder = builderApprovalKey
+                    ? localStorage.getItem(builderApprovalKey)
+                    : null;
+
+                setBuilderApproved(savedBuilder === "true");
+            } catch (err) {
+                console.error("Agent setup error:", err);
+                setAgentData(null);
+                setAgentApproved(false);
+            } finally {
+                setAgentLoading(false);
+            }
+        };
+
+        setupAgent();
     }, [address, builderApprovalKey]);
 
     const currentPrice = Number(prices?.[coin] || 0);
@@ -76,8 +100,8 @@ const TradePanel = () => {
                 : currentPrice * (1 + 1 / numericLeverage)
             : 0;
 
-    const estimatedFeeRate = 0.00045;
-    const estimatedFee = positionValue * estimatedFeeRate;
+    const estimatedExchangeFeeRate = 0.00045;
+    const estimatedExchangeFee = positionValue * estimatedExchangeFeeRate;
     const estimatedBuilderFee = positionValue * builderFeeRateDecimal;
 
     const canTrade =
@@ -96,6 +120,9 @@ const TradePanel = () => {
         }
     };
 
+    // =====================================
+    // APPROVE USER-SPECIFIC AGENT
+    // =====================================
     const handleApproveAgent = async () => {
         try {
             if (!address) {
@@ -103,22 +130,31 @@ const TradePanel = () => {
                 return;
             }
 
-            setApproving(true);
+            if (!agentData?.agentAddress || !agentData?.agentName) {
+                alert("Agent not ready yet");
+                return;
+            }
 
-            await approveAgent(AGENT_ADDRESS);
+            setApprovingAgent(true);
+
+            await approveAgent(agentData.agentAddress, agentData.agentName);
+
+            await markAgentApproved(address);
 
             setAgentApproved(true);
-            localStorage.setItem(`agentApproved_${address}`, "true");
 
-            alert("✅ Agent Approved");
+            alert("✅ Agent approved");
         } catch (err) {
-            console.error(err);
-            alert("❌ Approval failed");
+            console.error("Approve agent error:", err);
+            alert("❌ Agent approval failed");
         } finally {
-            setApproving(false);
+            setApprovingAgent(false);
         }
     };
 
+    // =====================================
+    // APPROVE BUILDER FEE
+    // =====================================
     const handleApproveBuilderFee = async () => {
         try {
             if (!address) {
@@ -127,7 +163,7 @@ const TradePanel = () => {
             }
 
             if (!BUILDER_ADDRESS || BUILDER_ADDRESS === "0xYOUR_BUILDER_ADDRESS") {
-                alert("Set your real builder address first");
+                alert("Set builder address first");
                 return;
             }
 
@@ -141,17 +177,25 @@ const TradePanel = () => {
                 localStorage.setItem(builderApprovalKey, "true");
             }
 
-            alert(`✅ Builder Fee Approved (${BUILDER_FEE_RATE})`);
+            alert(`✅ Builder fee approved (${BUILDER_FEE_RATE})`);
         } catch (err) {
-            console.error(err);
+            console.error("Builder approval error:", err);
             alert("❌ Builder fee approval failed");
         } finally {
             setApprovingBuilder(false);
         }
     };
 
+    // =====================================
+    // EXECUTE TRADE
+    // =====================================
     const handleTrade = async () => {
         try {
+            if (!address) {
+                alert("Connect wallet first");
+                return;
+            }
+
             if (!agentApproved) {
                 alert("⚠️ Please approve agent first");
                 return;
@@ -175,6 +219,7 @@ const TradePanel = () => {
             setLoading(true);
 
             const res = await placeTrade({
+                userAddress: address,
                 coin,
                 isLong: activeTab === "long",
                 size: coinSize,
@@ -192,12 +237,22 @@ const TradePanel = () => {
                     return;
                 }
 
-                alert(res.error);
+                if (
+                    res.error.includes("Agent not approved") ||
+                    res.error.includes("Agent not created") ||
+                    res.error.includes("API Wallet")
+                ) {
+                    setAgentApproved(false);
+                    alert("⚠️ Agent approval required again");
+                    return;
+                }
+
+                alert("❌ " + res.error);
             } else {
                 alert("✅ Trade executed");
             }
         } catch (err) {
-            console.error(err);
+            console.error("Trade error:", err);
             alert("❌ Trade error");
         } finally {
             setLoading(false);
@@ -218,15 +273,23 @@ const TradePanel = () => {
                 <>
                     <button
                         onClick={handleApproveAgent}
-                        disabled={approving || agentApproved}
+                        disabled={agentLoading || approvingAgent || agentApproved}
                         className="w-full bg-yellow-500 text-black py-2 rounded mb-3 font-semibold"
                     >
-                        {agentApproved
-                            ? "Agent Approved ✅"
-                            : approving
-                                ? "Approving..."
-                                : "Approve Agent"}
+                        {agentLoading
+                            ? "Preparing Agent..."
+                            : agentApproved
+                                ? "Agent Approved ✅"
+                                : approvingAgent
+                                    ? "Approving Agent..."
+                                    : "Approve Agent"}
                     </button>
+
+                    {agentData?.agentAddress && (
+                        <div className="text-[10px] text-gray-500 mb-3 break-all">
+                            Agent: {agentData.agentAddress}
+                        </div>
+                    )}
 
                     <button
                         onClick={handleApproveBuilderFee}
@@ -273,8 +336,8 @@ const TradePanel = () => {
                 <button
                     onClick={() => setActiveTab("long")}
                     className={`flex-1 py-2 ${activeTab === "long"
-                        ? "bg-green-500 text-black"
-                        : "text-gray-400"
+                            ? "bg-green-500 text-black"
+                            : "text-gray-400"
                         }`}
                 >
                     Buy / Long
@@ -283,8 +346,8 @@ const TradePanel = () => {
                 <button
                     onClick={() => setActiveTab("short")}
                     className={`flex-1 py-2 ${activeTab === "short"
-                        ? "bg-red-500 text-black"
-                        : "text-gray-400"
+                            ? "bg-red-500 text-black"
+                            : "text-gray-400"
                         }`}
                 >
                     Sell / Short
@@ -297,8 +360,8 @@ const TradePanel = () => {
                         key={type}
                         onClick={() => setOrderType(type)}
                         className={`${orderType === type
-                            ? "text-blue-400"
-                            : "text-gray-500"
+                                ? "text-blue-400"
+                                : "text-gray-500"
                             }`}
                     >
                         {type}
@@ -358,7 +421,7 @@ const TradePanel = () => {
                 <div className="flex justify-between">
                     <span>Est. Exchange Fee</span>
                     <span className="text-yellow-400">
-                        ${estimatedFee ? estimatedFee.toFixed(4) : "-"}
+                        ${estimatedExchangeFee ? estimatedExchangeFee.toFixed(4) : "-"}
                     </span>
                 </div>
 
