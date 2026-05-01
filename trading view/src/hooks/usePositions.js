@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const BASE_URL = "https://hyperliquid-rho.vercel.app";
+const BASE_URL = "https://hyperliquid-cf7s.onrender.com";
 
 export function usePositions(address) {
     const [positions, setPositions] = useState([]);

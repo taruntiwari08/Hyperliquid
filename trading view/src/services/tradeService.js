@@ -1,4 +1,4 @@
-const BASE_URL = "https://hyperliquid-rho.vercel.app";
+const BASE_URL = "https://hyperliquid-cf7s.onrender.com";
 
 export async function placeTrade({
     userAddress,
