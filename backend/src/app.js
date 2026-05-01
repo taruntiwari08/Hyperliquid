@@ -32,20 +32,34 @@ const corsOptions = {
     credentials: true,
 };
 
-// ✅ CORS must come before routes
+// ✅ CORS first
 app.use(cors(corsOptions));
 
-// ✅ Handle browser preflight requests
-app.options("*", cors(corsOptions));
+// ✅ Manual preflight handler — avoids app.options("*") crash
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+        res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+        res.header(
+            "Access-Control-Allow-Methods",
+            "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        );
+        res.header(
+            "Access-Control-Allow-Headers",
+            "Content-Type,Authorization"
+        );
+        res.header("Access-Control-Allow-Credentials", "true");
+
+        return res.sendStatus(204);
+    }
+
+    next();
+});
 
 app.use(express.json());
 
 app.use("/agent", agentRoutes);
-
 app.use("/", tradeRoutes);
-
 app.use("/", marketRoutes);
-
 app.use("/", accountRoutes);
 
 app.get("/health", (req, res) => {
