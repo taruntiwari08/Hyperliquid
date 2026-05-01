@@ -6,7 +6,7 @@ export function usePrices() {
     useEffect(() => {
         const fetchPrices = async () => {
             try {
-                const res = await fetch("http://localhost:3000/prices");
+                const res = await fetch("https://hyperliquid-rho.vercel.app/prices");
                 const data = await res.json();
 
                 console.log("PRICE DATA:", data); // DEBUG

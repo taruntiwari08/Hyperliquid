@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://hyperliquid-rho.vercel.app";
 
 export function useBalance(address) {
     const [balance, setBalance] = useState(null);

@@ -2,7 +2,7 @@ import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
 import { createWalletClient, custom } from "viem";
 import { arbitrum } from "viem/chains";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://hyperliquid-rho.vercel.app";
 
 const getMetaMaskProvider = () => {
     if (!window.ethereum) {
