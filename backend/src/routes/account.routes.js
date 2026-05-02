@@ -13,5 +13,4 @@ router.get("/balance/:address", getBalance);
 router.get("/debug-state/:address", getDebugState);
 router.get("/positions/:address", getPositions);
 router.get("/builder-stats/:address", getBuilderStats);
-
 export default router;
