@@ -1,0 +1,114 @@
+.transfer-panel { overflow: hidden; animation: fadeUp 0.3s ease 0.1s both; }
+
+.balance-tag {
+  font-size: 12px;
+  color: var(--orange-bright);
+  background: rgba(255,152,0,0.08);
+  border: 1px solid rgba(255,152,0,0.15);
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+.transfer-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,152,0,0.08);
+}
+
+.transfer-tab {
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+  margin-bottom: -1px;
+}
+.transfer-tab:hover { color: var(--text-secondary); }
+.transfer-tab.deposit.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+.transfer-tab.withdraw.active { color: var(--orange-bright); border-bottom-color: var(--orange); }
+
+.transfer-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transfer-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-md);
+}
+.info-icon { font-size: 12px; opacity: 0.6; flex-shrink: 0; margin-top: 1px; }
+.transfer-info strong { color: var(--text-secondary); }
+
+.transfer-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--red);
+  padding: 8px 10px;
+  background: rgba(255,77,106,0.07);
+  border: 1px solid rgba(255,77,106,0.15);
+  border-radius: var(--radius-md);
+}
+
+.transfer-success {
+  display: block;
+  font-size: 12px;
+  color: var(--green);
+  padding: 8px 10px;
+  background: rgba(0,229,160,0.07);
+  border: 1px solid rgba(0,229,160,0.15);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  transition: opacity var(--transition);
+}
+.transfer-success:hover { opacity: 0.8; }
+
+.max-btn { color: var(--orange) !important; border-color: rgba(255,152,0,0.2) !important; }
+
+.transfer-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+}
+.transfer-btn.deposit {
+  background: rgba(96,165,250,0.12);
+  border-color: rgba(96,165,250,0.3);
+  color: #60a5fa;
+}
+.transfer-btn.deposit:hover:not(:disabled) {
+  background: rgba(96,165,250,0.18);
+  transform: translateY(-1px);
+}
+.transfer-btn.withdraw {
+  background: rgba(255,152,0,0.12);
+  border-color: rgba(255,152,0,0.3);
+  color: var(--orange-bright);
+}
+.transfer-btn.withdraw:hover:not(:disabled) {
+  background: rgba(255,152,0,0.18);
+  transform: translateY(-1px);
+}
+.transfer-btn:disabled { opacity: 0.4; cursor: not-allowed; }

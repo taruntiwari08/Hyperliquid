@@ -1,0 +1,64 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.trading-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  grid-template-areas: "chart side";
+  gap: 8px;
+  padding: 8px;
+  flex: 1;
+  min-height: 0;
+  align-items: start;
+}
+
+.chart-section {
+  grid-area: chart;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.side-panel {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 8px;
+}
+
+.bottom-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Tablet */
+@media (max-width: 1100px) {
+  .trading-layout {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .trading-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "chart"
+      "side";
+  }
+
+  .side-panel {
+    position: static;
+  }
+
+  .bottom-panels {
+    grid-template-columns: 1fr;
+  }
+}

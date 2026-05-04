@@ -1,29 +1,34 @@
-import { useState } from 'react'
 import TradingViewWidget from './components/TradingViewWidget'
 import TradePanel from './components/TradePanel'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Positions from './components/Positions'
 import TransferPanel from './components/DepositWithdraw'
 import OpenOrders from './components/OpenOrders'
+import TickerBar from './components/TickerBar'
+import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className=' bg-black'>
-      < ConnectButton />
-      <div className='flex bg-black'>
-        <div className='m-4 ml-6'>
+    <div className="app-shell">
+      <TickerBar />
+
+      <main className="trading-layout">
+        {/* LEFT — chart + order book */}
+        <section className="chart-section">
           <TradingViewWidget />
-        </div>
-        <div className="w-[400px] m-4">
+          <div className="bottom-panels">
+            <Positions />
+            <OpenOrders />
+          </div>
+        </section>
+
+        {/* RIGHT — trade + transfer */}
+        <aside className="side-panel">
           <TradePanel />
           <TransferPanel />
-          <Positions />
-          <OpenOrders />
-        </div>
-      </div>
-    </div >
+        </aside>
+      </main>
+    </div>
   )
 }
 

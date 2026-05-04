@@ -1,0 +1,115 @@
+/* MAIN BAR */
+.ticker-bar {
+  display: flex;                /* 🔥 enable layout split */
+  align-items: center;
+  justify-content: space-between; /* 🔥 push right section to end */
+  height: 36px;
+  width: 100%;
+  background: rgba(7, 13, 23, 0.8);
+  border-bottom: 1px solid rgba(255, 152, 0, 0.08);
+  padding: 0 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* LEFT SIDE */
+.ticker-left {
+  flex: 1;                     /* 🔥 take remaining space */
+  overflow: hidden;
+}
+
+/* SCROLLABLE INNER */
+.ticker-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ticker-inner::-webkit-scrollbar {
+  display: none;
+}
+
+/* TICKER ITEMS */
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-right: 1px solid rgba(255,152,0,0.07);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ticker-item:first-child {
+  padding-left: 0;
+}
+
+.ticker-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.ticker-price {
+  font-size: 12px;
+  color: var(--orange-bright);
+}
+
+/* RIGHT SIDE (WALLET AREA) */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;              /* 🔥 prevents shrinking */
+}
+
+/* BALANCE */
+.balance-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255,152,0,0.08);
+  border: 1px solid rgba(255,152,0,0.15);
+  border-radius: 99px;
+  font-size: 12px;
+}
+
+.balance-label {
+  color: var(--text-secondary);
+}
+
+.balance-value {
+  font-family: var(--font-mono);
+  color: var(--orange-bright);
+  font-weight: 500;
+}
+
+/* CONNECT BUTTON */
+.connect-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.connect-wrapper button {
+  background: rgba(255,152,0,0.12) !important;
+  border: 1px solid rgba(255,152,0,0.25) !important;
+  color: var(--orange-bright) !important;
+
+  font-size: 12px !important;     
+  padding: 4px 10px !important;   
+  height: 28px !important;        
+
+  border-radius: 8px !important;  
+  line-height: 1 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.connect-wrapper button:hover {
+  background: rgba(255,152,0,0.2) !important;
+}

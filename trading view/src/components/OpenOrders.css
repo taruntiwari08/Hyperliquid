@@ -1,0 +1,36 @@
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition);
+}
+.order-row:hover { border-color: rgba(255,152,0,0.12); }
+
+.order-left { display: flex; align-items: center; gap: 8px; }
+.order-coin { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+.order-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.order-type-badge.tp { background: rgba(0,229,160,0.12); color: var(--green); }
+.order-type-badge.sl { background: rgba(255,77,106,0.12); color: var(--red); }
+.order-type-badge.trigger { background: rgba(255,152,0,0.12); color: var(--orange); }
+
+.order-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.order-trigger { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+.order-size { font-size: 11px; color: var(--text-muted); }

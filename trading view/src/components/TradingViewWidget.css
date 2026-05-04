@@ -1,0 +1,13 @@
+.chart-wrapper {
+  height: 520px;
+  overflow: hidden;
+  padding: 0;
+}
+
+@media (max-width: 1100px) {
+  .chart-wrapper { height: 440px; }
+}
+
+@media (max-width: 768px) {
+  .chart-wrapper { height: 320px; }
+}
