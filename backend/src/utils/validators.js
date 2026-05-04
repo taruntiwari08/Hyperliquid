@@ -12,11 +12,27 @@ export function normalizeAddress(address) {
     return trimmed.toLowerCase();
 }
 
-export function validateTradeInput({ userAddress, coin, isLong, size, leverage }) {
+export function validateTradeInput({
+    userAddress,
+    coin,
+    isLong,
+    margin,
+    leverage,
+}) {
     if (!normalizeAddress(userAddress)) return "Invalid user address";
-    if (!coin || typeof coin !== "string") return "Invalid coin";
-    if (typeof isLong !== "boolean") return "Invalid side";
-    if (!size || isNaN(size) || Number(size) <= 0) return "Invalid size";
+
+    if (!coin || typeof coin !== "string") {
+        return "Invalid coin";
+    }
+
+    if (typeof isLong !== "boolean") {
+        return "Invalid side";
+    }
+
+    if (!margin || isNaN(margin) || Number(margin) <= 0) {
+        return "Invalid margin";
+    }
+
     if (!leverage || isNaN(leverage) || Number(leverage) <= 0) {
         return "Invalid leverage";
     }

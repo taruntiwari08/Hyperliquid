@@ -48,13 +48,21 @@ async function getApprovedAgentForUser(userAddress) {
 
 export async function openTrade(req, res) {
     try {
-        const { userAddress, coin, isLong, size, leverage } = req.body;
+        const {
+            userAddress,
+            coin,
+            isLong,
+            margin,
+            leverage,
+            tpPrice,
+            slPrice,
+        } = req.body;
 
         const error = validateTradeInput({
             userAddress,
             coin,
             isLong,
-            size,
+            margin,
             leverage,
         });
 
@@ -97,34 +105,152 @@ export async function openTrade(req, res) {
                 throw new Error("Invalid market price");
             }
 
-            const tolerance = 0.01;
-            const price = mid * (isLong ? 1 + tolerance : 1 - tolerance);
+            // ===============================
+            // ✅ BACKEND TP/SL VALIDATION
+            // ===============================
+            if (tpPrice && Number(tpPrice) > 0) {
+                const tp = Number(tpPrice);
 
-            const formattedPrice = formatPrice(price, szDecimals);
-            const formattedSize = formatSize(String(size), szDecimals);
+                if (isLong && tp <= mid) {
+                    throw new Error("For LONG, take profit must be above market price");
+                }
+
+                if (!isLong && tp >= mid) {
+                    throw new Error("For SHORT, take profit must be below market price");
+                }
+            }
+
+            if (slPrice && Number(slPrice) > 0) {
+                const sl = Number(slPrice);
+
+                if (isLong && sl >= mid) {
+                    throw new Error("For LONG, stop loss must be below market price");
+                }
+
+                if (!isLong && sl <= mid) {
+                    throw new Error("For SHORT, stop loss must be above market price");
+                }
+            }
+
+            const userMargin = Number(margin);
+            const userLeverage = Number(leverage);
+
+            if (!userMargin || userMargin <= 0) {
+                throw new Error("Invalid margin");
+            }
+
+            const positionValue = userMargin * userLeverage;
+
+            // ✅ Hyperliquid size is coin amount:
+            // coinSize = margin * leverage / price
+            const rawCoinSize = positionValue / mid;
+
+            const tolerance = 0.01;
+
+            // ✅ IOC aggressive limit order, behaves like market order
+            const entryPrice = mid * (isLong ? 1 + tolerance : 1 - tolerance);
+
+            const formattedEntryPrice = formatPrice(entryPrice, szDecimals);
+            const formattedSize = formatSize(String(rawCoinSize), szDecimals);
 
             if (!formattedSize || Number(formattedSize) <= 0) {
                 throw new Error("Invalid order size after formatting");
             }
 
-            const orderPayload = {
-                orders: [
-                    {
-                        a: assetId,
-                        b: isLong,
-                        p: formattedPrice,
-                        s: formattedSize,
-                        r: false,
-                        t: { limit: { tif: "Ioc" } },
+            const orders = [
+                {
+                    a: assetId,
+                    b: isLong,
+                    p: formattedEntryPrice,
+                    s: formattedSize,
+                    r: false,
+                    t: { limit: { tif: "Ioc" } },
+                },
+            ];
+
+            // ✅ Trigger close order side is opposite of entry.
+            // LONG close = sell below market.
+            // SHORT close = buy above market.
+            const closeLimitPrice = mid * (isLong ? 0.99 : 1.01);
+            const formattedCloseLimitPrice = formatPrice(
+                closeLimitPrice,
+                szDecimals
+            );
+
+            // ===============================
+            // ✅ OPTIONAL TAKE PROFIT
+            // ===============================
+            if (tpPrice && Number(tpPrice) > 0) {
+                const tp = Number(tpPrice);
+
+                orders.push({
+                    a: assetId,
+                    b: !isLong,
+                    p: formattedCloseLimitPrice,
+                    s: formattedSize,
+                    r: true,
+                    t: {
+                        trigger: {
+                            isMarket: true,
+                            triggerPx: formatPrice(tp, szDecimals),
+                            tpsl: "tp",
+                        },
                     },
-                ],
-                grouping: "na",
+                });
+            }
+
+            // ===============================
+            // ✅ OPTIONAL STOP LOSS
+            // ===============================
+            if (slPrice && Number(slPrice) > 0) {
+                const sl = Number(slPrice);
+
+                orders.push({
+                    a: assetId,
+                    b: !isLong,
+                    p: formattedCloseLimitPrice,
+                    s: formattedSize,
+                    r: true,
+                    t: {
+                        trigger: {
+                            isMarket: true,
+                            triggerPx: formatPrice(sl, szDecimals),
+                            tpsl: "sl",
+                        },
+                    },
+                });
+            }
+
+            const grouping = orders.length > 1 ? "normalTpsl" : "na";
+
+            const orderPayload = {
+                orders,
+                grouping,
 
                 builder: {
                     b: BUILDER_ADDRESS,
                     f: BUILDER_FEE_TENTHS_BP,
                 },
             };
+
+            console.log("📊 Order payload:", {
+                userAddress: normalizedUser,
+                coin,
+                side: isLong ? "LONG" : "SHORT",
+                margin: userMargin,
+                leverage: userLeverage,
+                positionValue,
+                mid,
+                rawCoinSize,
+                formattedSize,
+                formattedEntryPrice,
+                closeLimitPrice: formattedCloseLimitPrice,
+                tpPrice: tpPrice || null,
+                slPrice: slPrice || null,
+                grouping,
+                builder: BUILDER_ADDRESS,
+                builderFeeTenthsBp: BUILDER_FEE_TENTHS_BP,
+            });
 
             const orderResult = await exchangeClient.order(orderPayload);
 
@@ -138,10 +264,14 @@ export async function openTrade(req, res) {
                     agentAddress: agent.agentAddress,
                     coin,
                     side: isLong ? "LONG" : "SHORT",
+                    margin: userMargin,
                     size: formattedSize,
-                    price: formattedPrice,
+                    price: formattedEntryPrice,
                     notionalUsd: Number(formattedSize) * mid,
-                    leverage: Number(leverage),
+                    leverage: userLeverage,
+                    tpPrice: tpPrice || null,
+                    slPrice: slPrice || null,
+                    grouping,
                     builder: BUILDER_ADDRESS,
                     builderFeeTenthsBp: BUILDER_FEE_TENTHS_BP,
                 },
@@ -183,6 +313,15 @@ export async function openTrade(req, res) {
         if (err?.message?.includes("does not exist")) {
             return res.status(400).json({
                 error: "User not onboarded. Deposit funds first.",
+            });
+        }
+
+        if (
+            err?.message?.includes("take profit") ||
+            err?.message?.includes("stop loss")
+        ) {
+            return res.status(400).json({
+                error: err.message,
             });
         }
 

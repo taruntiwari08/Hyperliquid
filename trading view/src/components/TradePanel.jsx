@@ -24,8 +24,12 @@ const TradePanel = () => {
     const [orderType, setOrderType] = useState("market");
 
     const [leverage, setLeverage] = useState(5);
-    const [size, setSize] = useState("");
+    const [margin, setMargin] = useState("");
     const [coin, setCoin] = useState("BTC");
+
+    const [tpSlEnabled, setTpSlEnabled] = useState(false);
+    const [tpPrice, setTpPrice] = useState("");
+    const [slPrice, setSlPrice] = useState("");
 
     const [loading, setLoading] = useState(false);
 
@@ -86,12 +90,13 @@ const TradePanel = () => {
     }, [address, builderApprovalKey]);
 
     const currentPrice = Number(prices?.[coin] || 0);
-    const coinSize = Number(size || 0);
+    const marginAmount = Number(margin || 0);
     const numericBalance = Number(balance || 0);
     const numericLeverage = Number(leverage || 1);
 
-    const positionValue = coinSize * currentPrice;
-    const marginUsed = positionValue / numericLeverage;
+    const positionValue = marginAmount * numericLeverage;
+    const coinSize = currentPrice ? positionValue / currentPrice : 0;
+    const marginUsed = marginAmount;
 
     const estimatedLiquidation =
         currentPrice && numericLeverage
@@ -108,9 +113,9 @@ const TradePanel = () => {
 
     const canPlaceOrder =
         tradingEnabled &&
-        coinSize > 0 &&
-        marginUsed > 0 &&
+        marginAmount > 0 &&
         marginUsed <= numericBalance &&
+        currentPrice > 0 &&
         !loading;
 
     const resetBuilderApproval = () => {
@@ -119,6 +124,49 @@ const TradePanel = () => {
         if (builderApprovalKey) {
             localStorage.removeItem(builderApprovalKey);
         }
+    };
+
+    const validateTpSl = () => {
+        if (!tpSlEnabled) return true;
+
+        const tp = Number(tpPrice || 0);
+        const sl = Number(slPrice || 0);
+
+        if (!tp && !sl) {
+            alert("Enter Take Profit or Stop Loss price");
+            return false;
+        }
+
+        if (!currentPrice) {
+            alert("Price not loaded yet");
+            return false;
+        }
+
+        if (activeTab === "long") {
+            if (tp && tp <= currentPrice) {
+                alert("For LONG, Take Profit must be above current price");
+                return false;
+            }
+
+            if (sl && sl >= currentPrice) {
+                alert("For LONG, Stop Loss must be below current price");
+                return false;
+            }
+        }
+
+        if (activeTab === "short") {
+            if (tp && tp >= currentPrice) {
+                alert("For SHORT, Take Profit must be below current price");
+                return false;
+            }
+
+            if (sl && sl <= currentPrice) {
+                alert("For SHORT, Stop Loss must be above current price");
+                return false;
+            }
+        }
+
+        return true;
     };
 
     const handleEnableTrading = async () => {
@@ -138,7 +186,6 @@ const TradePanel = () => {
                 return;
             }
 
-            // 1. Approve agent if not already approved
             if (!agentApproved) {
                 setApprovingAgent(true);
 
@@ -150,7 +197,6 @@ const TradePanel = () => {
                 setApprovingAgent(false);
             }
 
-            // 2. Approve builder fee if not already approved
             if (!builderApproved) {
                 setApprovingBuilder(true);
 
@@ -169,7 +215,6 @@ const TradePanel = () => {
             alert("✅ Trading enabled successfully");
         } catch (err) {
             console.error("Enable trading error:", err);
-
             alert("❌ Trading enable failed");
         } finally {
             setApprovingAgent(false);
@@ -193,23 +238,22 @@ const TradePanel = () => {
                 return;
             }
 
-            if (!agentApproved) {
+            if (!agentApproved || !builderApproved) {
                 setShowAgentModal(true);
                 return;
             }
 
-            if (!builderApproved) {
-                setShowAgentModal(true);
-                return;
-            }
-
-            if (!coinSize || coinSize <= 0) {
-                alert(`Enter valid ${coin} size`);
+            if (!marginAmount || marginAmount <= 0) {
+                alert("Enter valid margin");
                 return;
             }
 
             if (marginUsed > numericBalance) {
                 alert("❌ Insufficient balance");
+                return;
+            }
+
+            if (!validateTpSl()) {
                 return;
             }
 
@@ -219,8 +263,10 @@ const TradePanel = () => {
                 userAddress: address,
                 coin,
                 isLong: activeTab === "long",
-                size: coinSize,
+                margin: marginAmount,
                 leverage: numericLeverage,
+                tpPrice: tpSlEnabled && tpPrice ? Number(tpPrice) : null,
+                slPrice: tpSlEnabled && slPrice ? Number(slPrice) : null,
             });
 
             if (res?.error) {
@@ -325,8 +371,8 @@ const TradePanel = () => {
                     <button
                         onClick={() => setActiveTab("long")}
                         className={`flex-1 py-2 ${activeTab === "long"
-                            ? "bg-green-500 text-black"
-                            : "text-gray-400"
+                                ? "bg-green-500 text-black"
+                                : "text-gray-400"
                             }`}
                     >
                         Buy / Long
@@ -335,8 +381,8 @@ const TradePanel = () => {
                     <button
                         onClick={() => setActiveTab("short")}
                         className={`flex-1 py-2 ${activeTab === "short"
-                            ? "bg-red-500 text-black"
-                            : "text-gray-400"
+                                ? "bg-red-500 text-black"
+                                : "text-gray-400"
                             }`}
                     >
                         Sell / Short
@@ -349,8 +395,8 @@ const TradePanel = () => {
                             key={type}
                             onClick={() => setOrderType(type)}
                             className={`${orderType === type
-                                ? "text-blue-400"
-                                : "text-gray-500"
+                                    ? "text-blue-400"
+                                    : "text-gray-500"
                                 }`}
                         >
                             {type}
@@ -360,11 +406,51 @@ const TradePanel = () => {
 
                 <input
                     type="number"
-                    placeholder={`Size (${coin})`}
-                    value={size}
-                    onChange={(e) => setSize(e.target.value)}
+                    placeholder="Margin (USDC)"
+                    value={margin}
+                    onChange={(e) => setMargin(e.target.value)}
                     className="w-full p-2 bg-[#111827] rounded mb-3"
                 />
+
+                <div className="w-full p-2 bg-[#111827] rounded mb-3 opacity-80 text-sm text-gray-300">
+                    Size: {coinSize ? coinSize.toFixed(6) : "-"} {coin}
+                </div>
+
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-gray-400">TP/SL</span>
+
+                    <button
+                        type="button"
+                        onClick={() => setTpSlEnabled(!tpSlEnabled)}
+                        className={`w-11 h-6 rounded-full relative ${tpSlEnabled ? "bg-blue-500" : "bg-gray-600"
+                            }`}
+                    >
+                        <span
+                            className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${tpSlEnabled ? "left-6" : "left-1"
+                                }`}
+                        />
+                    </button>
+                </div>
+
+                {tpSlEnabled && (
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                        <input
+                            type="number"
+                            placeholder="Take Profit Price"
+                            value={tpPrice}
+                            onChange={(e) => setTpPrice(e.target.value)}
+                            className="w-full p-2 bg-[#111827] rounded text-sm"
+                        />
+
+                        <input
+                            type="number"
+                            placeholder="Stop Loss Price"
+                            value={slPrice}
+                            onChange={(e) => setSlPrice(e.target.value)}
+                            className="w-full p-2 bg-[#111827] rounded text-sm"
+                        />
+                    </div>
+                )}
 
                 <div className="bg-[#111827] rounded mb-3 p-3 text-xs text-gray-400 space-y-2">
                     <div className="flex justify-between">
@@ -375,9 +461,9 @@ const TradePanel = () => {
                     </div>
 
                     <div className="flex justify-between">
-                        <span>Size</span>
+                        <span>Margin Used</span>
                         <span className="text-white">
-                            {coinSize ? coinSize : "-"} {coin}
+                            ${marginUsed ? marginUsed.toFixed(2) : "-"}
                         </span>
                     </div>
 
@@ -389,9 +475,9 @@ const TradePanel = () => {
                     </div>
 
                     <div className="flex justify-between">
-                        <span>Margin Used</span>
+                        <span>Size</span>
                         <span className="text-white">
-                            ${marginUsed ? marginUsed.toFixed(2) : "-"}
+                            {coinSize ? coinSize.toFixed(6) : "-"} {coin}
                         </span>
                     </div>
 
@@ -406,6 +492,24 @@ const TradePanel = () => {
                             ${estimatedLiquidation ? estimatedLiquidation.toFixed(2) : "-"}
                         </span>
                     </div>
+
+                    {tpSlEnabled && (
+                        <>
+                            <div className="flex justify-between">
+                                <span>Take Profit</span>
+                                <span className="text-green-400">
+                                    {tpPrice ? `$${Number(tpPrice).toFixed(2)}` : "-"}
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                                <span>Stop Loss</span>
+                                <span className="text-red-400">
+                                    {slPrice ? `$${Number(slPrice).toFixed(2)}` : "-"}
+                                </span>
+                            </div>
+                        </>
+                    )}
 
                     <div className="flex justify-between">
                         <span>Est. Exchange Fee</span>

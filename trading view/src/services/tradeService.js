@@ -4,8 +4,10 @@ export async function placeTrade({
     userAddress,
     coin,
     isLong,
-    size,
+    margin,
     leverage,
+    tpPrice,
+    slPrice,
 }) {
     try {
         const res = await fetch(`${BASE_URL}/trade`, {
@@ -17,8 +19,10 @@ export async function placeTrade({
                 userAddress,
                 coin,
                 isLong,
-                size,
+                margin,
                 leverage,
+                tpPrice,
+                slPrice,
             }),
         });
 
@@ -33,6 +37,7 @@ export async function placeTrade({
         return data;
     } catch (err) {
         console.error("Trade API Error:", err);
+
         return {
             error: err.message || "Trade failed",
         };
