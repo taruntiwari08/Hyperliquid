@@ -4,6 +4,7 @@ import TradePanel from './components/TradePanel'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Positions from './components/Positions'
 import TransferPanel from './components/DepositWithdraw'
+import OpenOrders from './components/OpenOrders'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -19,6 +20,7 @@ function App() {
           <TradePanel />
           <TransferPanel />
           <Positions />
+          <OpenOrders />
         </div>
       </div>
     </div >
