@@ -1,0 +1,185 @@
+.coin-search-wrap {
+    position: relative;
+}
+
+/* Trigger button */
+.coin-selector-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    background: rgba(0,212,255,0.06);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    transition: all var(--t);
+    font-family: var(--font);
+}
+
+.coin-selector-btn:hover {
+    background: rgba(0,212,255,0.1);
+    border-color: rgba(0,212,255,0.3);
+}
+
+.cs-selected {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: 0.2px;
+}
+
+.cs-pair {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.cs-arrow {
+    color: var(--text-secondary);
+    transition: transform var(--t);
+    flex-shrink: 0;
+}
+.cs-arrow.up { transform: rotate(180deg); }
+
+/* Dropdown */
+.cs-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 280px;
+    z-index: 300;
+    padding: 0;
+    overflow: hidden;
+    animation: fadeUp 0.15s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,212,255,0.15);
+}
+
+/* Search input */
+.cs-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0,212,255,0.08);
+    position: relative;
+}
+
+.cs-search-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.cs-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.cs-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.cs-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    transition: color var(--t);
+}
+.cs-clear:hover { color: var(--text-primary); }
+
+/* Section label */
+.cs-section-label {
+    padding: 6px 12px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+}
+
+/* List */
+.cs-list {
+    max-height: 280px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.cs-loading {
+    padding: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* Item */
+.cs-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background var(--t);
+    font-family: var(--font);
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+
+.cs-item:hover {
+    background: rgba(0,212,255,0.05);
+}
+
+.cs-item.selected {
+    background: rgba(0,212,255,0.08);
+}
+
+.cs-item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cs-coin-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cs-pair-label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.cs-item-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cs-lev {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+}
+
+.cs-check {
+    font-size: 12px;
+    color: var(--cyan);
+    font-weight: 700;
+}
+
+/* Mobile - dropdown goes up if near bottom */
+@media (max-width: 900px) {
+    .cs-dropdown {
+        width: min(280px, calc(100vw - 32px));
+    }
+}

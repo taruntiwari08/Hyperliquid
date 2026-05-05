@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi'
 import { usePositions } from '../hooks/usePositions'
 import { useOpenOrders } from '../hooks/useOpenOrders'
 import { closePosition } from '../services/closeService'
+import History from './History'
 import './BottomTabs.css'
 
 const f = (n, d=2) => Number(n||0).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d})
@@ -23,33 +24,37 @@ export default function BottomTabs() {
     finally { setClosing(null) }
   }
 
+  const TABS = [
+    { id: 'positions', label: 'Positions',   count: positions.length, live: pLoading },
+    { id: 'orders',    label: 'TP / SL',     count: orders.length,    live: oLoading },
+    { id: 'trades',    label: 'Trade History' },
+    { id: 'transfers', label: 'Transfers' },
+  ]
+
   return (
     <div className="btabs">
       {/* Tab bar */}
       <div className="btab-bar">
-        <button
-          className={`btab ${tab==='positions'?'active':''}`}
-          onClick={() => setTab('positions')}
-        >
-          Positions
-          {positions.length > 0 && <span className="btab-badge">{positions.length}</span>}
-        </button>
-        <button
-          className={`btab ${tab==='orders'?'active':''}`}
-          onClick={() => setTab('orders')}
-        >
-          TP / SL
-          {orders.length > 0 && <span className="btab-badge">{orders.length}</span>}
-        </button>
-        {(pLoading || oLoading) && <span className="btab-live">Live</span>}
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            className={`btab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+            {t.count > 0 && <span className="btab-badge">{t.count}</span>}
+            {t.live && <span className="btab-dot" />}
+          </button>
+        ))}
       </div>
 
       {/* Content */}
       <div className="btab-content">
-        {!isConnected ? (
-          <div className="btab-empty">Connect wallet to view</div>
-        ) : tab === 'positions' ? (
-          positions.length === 0 ? (
+        {/* ── Positions ── */}
+        {tab === 'positions' && (
+          !isConnected ? (
+            <div className="btab-empty">Connect wallet to view</div>
+          ) : positions.length === 0 ? (
             <div className="btab-empty">No open positions</div>
           ) : (
             <div className="pos-table-wrap">
@@ -84,11 +89,7 @@ export default function BottomTabs() {
                           <span className="pnl-pct">({Number(p.pnlPercent||0).toFixed(1)}%)</span>
                         </td>
                         <td>
-                          <button
-                            className="close-row-btn"
-                            onClick={() => handleClose(p.coin)}
-                            disabled={closing===p.coin}
-                          >
+                          <button className="close-row-btn" onClick={() => handleClose(p.coin)} disabled={closing===p.coin}>
                             {closing===p.coin ? '...' : 'Close'}
                           </button>
                         </td>
@@ -99,20 +100,21 @@ export default function BottomTabs() {
               </table>
             </div>
           )
-        ) : (
-          orders.length === 0 ? (
+        )}
+
+        {/* ── TP/SL Orders ── */}
+        {tab === 'orders' && (
+          !isConnected ? (
+            <div className="btab-empty">Connect wallet to view</div>
+          ) : orders.length === 0 ? (
             <div className="btab-empty">No trigger orders</div>
           ) : (
             <div className="pos-table-wrap">
               <table className="pos-table">
                 <thead>
                   <tr>
-                    <th>Market</th>
-                    <th>Type</th>
-                    <th>Size</th>
-                    <th>Trigger</th>
-                    <th>Limit</th>
-                    <th>Condition</th>
+                    <th>Market</th><th>Type</th><th>Size</th>
+                    <th>Trigger</th><th>Limit</th><th>Condition</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,6 +136,11 @@ export default function BottomTabs() {
               </table>
             </div>
           )
+        )}
+
+        {/* ── Trade History ── */}
+        {(tab === 'trades' || tab === 'transfers') && (
+          <History defaultTab={tab === 'transfers' ? 'transfers' : 'trades'} />
         )}
       </div>
     </div>

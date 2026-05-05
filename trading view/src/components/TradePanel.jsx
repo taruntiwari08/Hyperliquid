@@ -7,9 +7,10 @@ import { placeTrade } from '../services/tradeService'
 import { createOrGetAgent, approveAgent, markAgentApproved } from '../services/agentService'
 import { approveBuilderFee } from '../services/builderService'
 import './TradePanel.css'
+import CoinSearch from './CoinSearch'
 
 const COINS = ['BTC', 'ETH', 'SOL', 'ARB', 'AVAX']
-const LEVERAGES = [2, 5, 10, 20]
+const LEVERAGES = [2, 5, 10, 20,50]
 const BUILDER_ADDRESS = '0x83864EF365f8f26DDEb27f931c91A7b681EE3179'
 const BUILDER_FEE_RATE = '0.1%'
 const BUILDER_FEE_DECIMAL = 0.001
@@ -147,13 +148,7 @@ export default function TradePanel() {
     <>
       <div className="trade-panel glass fade-up">
         {/* Coin selector */}
-        <div className="coin-tabs">
-          {COINS.map(c => (
-            <button key={c} className={`coin-tab ${coin === c ? 'active' : ''}`} onClick={() => setCoin(c)}>
-              {c}
-            </button>
-          ))}
-        </div>
+        <CoinSearch value={coin} onChange={setCoin} />
 
         {/* Price display */}
         <div className="price-display">

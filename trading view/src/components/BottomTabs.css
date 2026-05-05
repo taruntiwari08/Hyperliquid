@@ -1,0 +1,219 @@
+.btabs {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Tab bar */
+.btab-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid rgba(0,212,255,0.08);
+    background: rgba(0,0,0,0.2);
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.btab-bar::-webkit-scrollbar { display: none; }
+
+.btab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font);
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--t);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-bottom: -1px;
+}
+.btab:hover  { color: var(--text-secondary); }
+.btab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+}
+
+/* Badge — position count */
+.btab-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan-border);
+    border-radius: 99px;
+    color: var(--cyan);
+    font-family: var(--mono);
+}
+
+/* Live dot */
+.btab-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s infinite;
+    flex-shrink: 0;
+}
+
+/* Content area */
+.btab-content {
+    flex: 1;
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+/* Empty state */
+.btab-empty {
+    padding: 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ── Positions / Orders table ── */
+.pos-table-wrap {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    height: 100%;
+}
+
+.pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 580px;
+}
+
+.pos-table thead tr {
+    border-bottom: 1px solid rgba(0,212,255,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.pos-table th {
+    padding: 7px 12px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    background: rgba(1,12,18,0.95);
+    white-space: nowrap;
+}
+
+.pos-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background var(--t);
+}
+
+.pos-table tbody tr:hover {
+    background: rgba(0,212,255,0.03);
+}
+
+.pos-table td {
+    padding: 8px 12px;
+    color: var(--text-primary);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Coin cell */
+.td-coin {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+}
+
+.td-perp {
+    font-size: 9px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-weight: 400;
+}
+
+/* Liq price */
+.td-liq { color: #fbbf24 !important; }
+
+/* PnL */
+.td-pnl { line-height: 1.3; }
+.pnl-pct {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Condition text */
+.td-cond {
+    color: var(--text-secondary);
+    font-size: 11px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* PnL colors */
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+
+/* Side badges */
+.side-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+}
+.side-tag.long  { background: var(--green-dim); color: var(--green); }
+.side-tag.short { background: var(--red-dim);   color: var(--red); }
+
+/* Order type badges */
+.type-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+.type-tag.tp      { background: var(--green-dim); color: var(--green); }
+.type-tag.sl      { background: var(--red-dim);   color: var(--red); }
+.type-tag.trigger { background: var(--cyan-dim);  color: var(--cyan); }
+
+/* Close button */
+.close-row-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font);
+    background: rgba(255,77,106,0.08);
+    border: 1px solid rgba(255,77,106,0.2);
+    border-radius: var(--r-sm);
+    color: var(--red);
+    cursor: pointer;
+    transition: all var(--t);
+    white-space: nowrap;
+}
+.close-row-btn:hover:not(:disabled) {
+    background: rgba(255,77,106,0.15);
+    border-color: rgba(255,77,106,0.4);
+}
+.close-row-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .btab { padding: 8px 10px; font-size: 11px; }
+    .pos-table { min-width: 480px; }
+}

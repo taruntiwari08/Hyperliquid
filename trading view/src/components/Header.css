@@ -1,0 +1,114 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  padding: 0 14px;
+  background: rgba(1,8,14,0.92);
+  border-bottom: 1px solid rgba(0,212,255,0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  flex-shrink: 0;
+  z-index: 90;
+  position: relative;
+}
+
+.header-left  { display: flex; align-items: center; gap: 28px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+/* Logo */
+.logo { display: flex; align-items: center; gap: 9px; cursor: default; }
+.logo-mark { filter: drop-shadow(0 0 8px rgba(0,212,255,0.5)); flex-shrink: 0; }
+.logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+}
+.logo-accent { color: var(--cyan); }
+
+/* Nav — now buttons not just links */
+.header-nav { display: flex; gap: 2px; }
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 5px 11px;
+  border-radius: var(--r-md);
+  transition: all var(--t);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.nav-link:hover  { color: var(--text-primary); background: rgba(0,212,255,0.06); }
+.nav-link.active { color: var(--cyan); background: rgba(0,212,255,0.1); }
+
+/* Balance chip */
+.bal-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border);
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.bal-label { font-size: 11px; color: var(--text-secondary); }
+.bal-val   { font-size: 12px; color: var(--cyan-bright); font-weight: 500; }
+
+/* Mobile buttons */
+.mobile-trade-btn,
+.mobile-hist-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all var(--t);
+}
+
+.mobile-trade-btn {
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border);
+  color: var(--cyan);
+}
+.mobile-trade-btn:hover { background: rgba(0,212,255,0.18); }
+
+.mobile-hist-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-secondary);
+}
+.mobile-hist-btn:hover,
+.mobile-hist-btn.active {
+  background: var(--cyan-dim);
+  border-color: var(--cyan-border);
+  color: var(--cyan);
+}
+.mobile-hist-label { font-size: 12px; }
+
+/* RainbowKit override */
+.rk-wrap button {
+  background: rgba(0,212,255,0.08) !important;
+  border: 1px solid rgba(0,212,255,0.2) !important;
+  color: var(--cyan) !important;
+  font-family: var(--font) !important;
+  font-size: 13px !important;
+  border-radius: var(--r-md) !important;
+}
+.rk-wrap button:hover { background: rgba(0,212,255,0.15) !important; }
+
+@media (max-width: 900px) {
+  .header-nav   { display: none; }
+  .bal-chip     { display: none; }
+  .mobile-trade-btn,
+  .mobile-hist-btn { display: flex; }
+}

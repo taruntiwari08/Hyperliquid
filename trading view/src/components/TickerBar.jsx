@@ -42,7 +42,7 @@ const balance = useBalance(address)
           )
         })}
       </div>
-        <div className="header-right">
+        {/* <div className="header-right">
         {isConnected && balance && (
           <div className="balance-pill">
             <span className="balance-label">Balance</span>
@@ -56,7 +56,7 @@ const balance = useBalance(address)
             accountStatus="avatar"
           />
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }
