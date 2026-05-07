@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const IS_TESTNET = true;
+const IS_TESTNET = false;
 
 const HL_WS_URL = IS_TESTNET
     ? "wss://api.hyperliquid-testnet.xyz/ws"
