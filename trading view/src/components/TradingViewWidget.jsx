@@ -1,20 +1,49 @@
 import { useEffect, useRef, memo } from 'react'
 import './TradingViewWidget.css'
 
-function TradingViewWidget() {
-  const container = useRef()
-  const initialized = useRef(false)
+const getTradingViewSymbol = (coin) => {
+  const map = {
+    BTC: 'COINBASE:BTCUSDC',
+    ETH: 'COINBASE:ETHUSDC',
+    SOL: 'COINBASE:SOLUSDC',
+    AVAX: 'COINBASE:AVAXUSDC',
+    DOGE: 'COINBASE:DOGEUSDC',
+    ARB: 'COINBASE:ARBUSDC',
+
+    // Fallbacks where USDC pairs may not be available/reliable
+    MATIC: 'BINANCE:MATICUSDC',
+    OP: 'BINANCE:OPUSDC',
+    SUI: 'BINANCE:SUIUSDC',
+    WIF: 'BINANCE:WIFUSDC',
+    PEPE: 'BINANCE:PEPEUSDC',
+  }
+
+  return map[coin] || `COINBASE:${coin}USDC`
+}
+
+function TradingViewWidget({ coin = 'BTC' }) {
+  const container = useRef(null)
 
   useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+    if (!container.current) return
+
+    container.current.innerHTML = ''
+
+    const widgetDiv = document.createElement('div')
+    widgetDiv.className = 'tradingview-widget-container__widget'
+    widgetDiv.style.height = '100%'
+    widgetDiv.style.width = '100%'
+
+    container.current.appendChild(widgetDiv)
 
     const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
+    script.src =
+      'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
     script.type = 'text/javascript'
     script.async = true
+
     script.innerHTML = JSON.stringify({
-      allow_symbol_change: true,
+      allow_symbol_change: false,
       calendar: false,
       details: false,
       hide_side_toolbar: false,
@@ -26,7 +55,7 @@ function TradingViewWidget() {
       locale: 'en',
       save_image: true,
       style: '1',
-      symbol: 'BINANCE:BTCUSDT',
+      symbol: getTradingViewSymbol(coin),
       theme: 'dark',
       timezone: 'Etc/UTC',
       backgroundColor: '#04080f',
@@ -38,14 +67,17 @@ function TradingViewWidget() {
       width: '100%',
       height: '100%',
     })
+
     container.current.appendChild(script)
-  }, [])
+  }, [coin])
 
   return (
     <div className="chart-wrapper glass">
-      <div className="tradingview-widget-container" ref={container} style={{ height: '100%', width: '100%' }}>
-        <div className="tradingview-widget-container__widget" style={{ height: '100%', width: '100%' }} />
-      </div>
+      <div
+        className="tradingview-widget-container"
+        ref={container}
+        style={{ height: '100%', width: '100%' }}
+      />
     </div>
   )
 }

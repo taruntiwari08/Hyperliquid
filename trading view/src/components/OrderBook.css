@@ -1,0 +1,193 @@
+.orderbook-panel {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(7, 13, 23, 0.92);
+    border: 1px solid rgba(0, 212, 255, 0.08);
+}
+
+.ob-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ob-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e5f7ff;
+}
+
+.ob-market {
+    margin-left: 8px;
+    font-size: 11px;
+    color: #6b8794;
+}
+
+.ob-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ob-live {
+    font-size: 11px;
+    color: #4dd0c1;
+}
+
+.ob-live.connected {
+    color: #4dd0c1;
+}
+
+.ob-live.connecting,
+.ob-live.reconnecting {
+    color: #facc15;
+}
+
+.ob-live.error,
+.ob-live.offline {
+    color: #fb7185;
+}
+
+/* Dropdown like Hyperliquid */
+.ob-unit-select {
+    position: relative;
+}
+
+.ob-unit-select select {
+    height: 30px;
+    min-width: 72px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(15, 23, 42, 0.95);
+    color: #e5f7ff;
+    font-size: 12px;
+    padding: 0 26px 0 9px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.ob-unit-select::after {
+    content: "⌄";
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-54%);
+    color: #94a3b8;
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.ob-unit-select select:hover {
+    border-color: rgba(77, 208, 193, 0.35);
+    background: rgba(15, 30, 42, 0.98);
+}
+
+.ob-error {
+    font-size: 12px;
+    color: #fb7185;
+    margin-bottom: 10px;
+}
+
+.ob-table-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    color: #6b8794;
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+
+.ob-table-head span:nth-child(2),
+.ob-table-head span:nth-child(3) {
+    text-align: right;
+}
+
+.ob-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ob-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 4px 0;
+    font-size: 12px;
+    line-height: 1.2;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+/* Depth bar */
+.ob-row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--depth, 0%);
+    z-index: 1;
+    pointer-events: none;
+    transition: width 120ms linear;
+}
+
+.ob-row.ask::before {
+    background: rgba(251, 113, 133, 0.16);
+}
+
+.ob-row.bid::before {
+    background: rgba(16, 185, 129, 0.16);
+}
+
+.ob-row span {
+    position: relative;
+    z-index: 2;
+}
+
+.ob-row span:nth-child(2),
+.ob-row span:nth-child(3) {
+    text-align: right;
+}
+
+.ob-row.ask .ob-price {
+    color: #fb7185;
+}
+
+.ob-row.bid .ob-price {
+    color: #10b981;
+}
+
+.ob-row.ask:hover {
+    background: rgba(251, 113, 133, 0.05);
+}
+
+.ob-row.bid:hover {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.ob-spread {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 9px 0;
+    margin: 8px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    color: #94a3b8;
+    font-size: 11px;
+    background: rgba(148, 163, 184, 0.08);
+}
+
+.ob-spread strong {
+    text-align: right;
+    color: #e5f7ff;
+}
+
+.ob-spread span:last-child {
+    text-align: right;
+    color: #e5f7ff;
+}

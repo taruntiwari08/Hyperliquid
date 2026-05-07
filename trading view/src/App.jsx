@@ -6,14 +6,35 @@ import TradePanel from './components/TradePanel'
 import BottomTabs from './components/BottomTabs'
 import DepositWithdraw from './components/DepositWithdraw'
 import History from './components/History'
+import MarketsModal from './components/MarketsModal'
 import './App.css'
+import OrderBook from './components/OrderBook'
 
 export default function App() {
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
-  const [activePage,  setActivePage]    = useState('trade') // 'trade' | 'history'
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activePage, setActivePage] = useState('trade')
 
-  const openSidebar  = useCallback(() => setSidebarOpen(true),  [])
+  // ✅ GLOBAL SELECTED COIN
+  const [selectedCoin, setSelectedCoin] = useState('BTC')
+
+  // ✅ MARKETS MODAL
+  const [marketsOpen, setMarketsOpen] = useState(false)
+
+  const openSidebar = useCallback(() => setSidebarOpen(true), [])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
+
+  const openMarkets = useCallback(() => {
+    setMarketsOpen(true)
+  }, [])
+
+  const closeMarkets = useCallback(() => {
+    setMarketsOpen(false)
+  }, [])
+
+  const handleSelectCoin = useCallback((coin) => {
+    setSelectedCoin(coin)
+    setMarketsOpen(false)
+  }, [])
 
   return (
     <div className="app-shell">
@@ -23,18 +44,23 @@ export default function App() {
         activePage={activePage}
         onNavigate={setActivePage}
       />
-      <TickerBar />
+
+      <TickerBar
+        selectedCoin={selectedCoin}
+        onSelectCoin={handleSelectCoin}
+        onOpenMarkets={openMarkets}
+      />
 
       {activePage === 'trade' ? (
-        /* ── TRADE PAGE ── */
         <div className="trading-layout">
           <div className="chart-area">
             <div className="chart-wrap">
-              <TradingViewWidget />
+              {/* ✅ keep prop name as coin */}
+              <TradingViewWidget coin={selectedCoin} />
             </div>
-            
+
             <div className="bottom-area">
-              <BottomTabs />
+              <BottomTabs selectedCoin={selectedCoin} />
             </div>
           </div>
 
@@ -44,18 +70,34 @@ export default function App() {
           />
 
           <div className={`right-sidebar ${sidebarOpen ? 'open' : ''}`}>
-  <div className="sidebar-content">
-    <TradePanel onClose={closeSidebar} />
-    <DepositWithdraw />
-  </div>
-</div>
+            <div className="sidebar-content">
+              {/* ✅ keep prop names as coin/setCoin */}
+              <TradePanel
+                coin={selectedCoin}
+                setCoin={handleSelectCoin}
+                onClose={closeSidebar}
+              />
+
+              <OrderBook coin={selectedCoin} />
+
+              <DepositWithdraw />
+            </div>
+          </div>
         </div>
       ) : (
-        /* ── HISTORY PAGE ── */
         <div className="history-page">
           <History fullPage />
         </div>
       )}
+
+
+
+      <MarketsModal
+        open={marketsOpen}
+        onClose={closeMarkets}
+        onSelectCoin={handleSelectCoin}
+        selectedCoin={selectedCoin}
+      />
     </div>
   )
 }

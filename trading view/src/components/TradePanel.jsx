@@ -10,20 +10,20 @@ import './TradePanel.css'
 import CoinSearch from './CoinSearch'
 
 const COINS = ['BTC', 'ETH', 'SOL', 'ARB', 'AVAX']
-const LEVERAGES = [2, 5, 10, 20,50]
+const LEVERAGES = [2, 5, 10, 20, 50]
 const BUILDER_ADDRESS = '0x83864EF365f8f26DDEb27f931c91A7b681EE3179'
 const BUILDER_FEE_RATE = '0.1%'
 const BUILDER_FEE_DECIMAL = 0.001
 const BUILDER_VERSION = 'v1'
 const EXCHANGE_FEE = 0.00045
 
-export default function TradePanel() {
+export default function TradePanel({ coin, setCoin }) {
   const { isConnected, address } = useAccount()
   const prices = usePrices()
   const balance = useBalance(address)
 
   const [side, setSide] = useState('long')
-  const [coin, setCoin] = useState('BTC')
+  // const [coin, setCoin] = useState('BTC')
   const [leverage, setLeverage] = useState(10)
   const [margin, setMargin] = useState('')
   const [tpEnabled, setTpEnabled] = useState(false)
@@ -342,7 +342,7 @@ export default function TradePanel() {
             <div className="modal-header">
               <div className="modal-icon">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <polygon points="14,3 25,9 25,19 14,25 3,19 3,9" fill="none" stroke="#ff9800" strokeWidth="1.5"/>
+                  <polygon points="14,3 25,9 25,19 14,25 3,19 3,9" fill="none" stroke="#ff9800" strokeWidth="1.5" />
                 </svg>
               </div>
               <h2 className="modal-title">Enable Trading</h2>
