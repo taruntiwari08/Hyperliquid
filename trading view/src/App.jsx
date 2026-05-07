@@ -8,6 +8,7 @@ import DepositWithdraw from './components/DepositWithdraw'
 import History from './components/History'
 import MarketsModal from './components/MarketsModal'
 import './App.css'
+import OrderBook from './components/OrderBook'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -77,6 +78,8 @@ export default function App() {
                 onClose={closeSidebar}
               />
 
+              <OrderBook coin={selectedCoin} />
+
               <DepositWithdraw />
             </div>
           </div>
@@ -86,6 +89,8 @@ export default function App() {
           <History fullPage />
         </div>
       )}
+
+
 
       <MarketsModal
         open={marketsOpen}
