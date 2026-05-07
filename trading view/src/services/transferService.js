@@ -1,25 +1,24 @@
 import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
 import { createWalletClient, custom, encodeFunctionData, parseUnits } from "viem";
-import { arbitrumSepolia } from "viem/chains"; // ← changed from arbitrum
+import { arbitrumSepolia, arbitrum } from "viem/chains"; // ← changed from arbitrum
 import { erc20Abi } from "viem";
-
-const IS_TESTNET = true;
+import { BASE_URL, isTestnet } from "../config/base";
 
 // ── Testnet addresses ──────────────────────────────────────────
-const TESTNET_BRIDGE   = "0x08cfc1B6b2dCF36A1480b99353A354AA8AC56f89";
-const TESTNET_USDC     = "0x1baAbB04529D43a73232B713C0FE471f7c7334d5";
+const TESTNET_BRIDGE = "0x08cfc1B6b2dCF36A1480b99353A354AA8AC56f89";
+const TESTNET_USDC = "0x1baAbB04529D43a73232B713C0FE471f7c7334d5";
 const TESTNET_CHAIN_ID = "0x66eee"; // 421614 = Arbitrum Sepolia ← was 0xa4b1 (mainnet)
 
 // ── Mainnet addresses ──────────────────────────────────────────
-const MAINNET_BRIDGE   = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
-const MAINNET_USDC     = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+const MAINNET_BRIDGE = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
+const MAINNET_USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 const MAINNET_CHAIN_ID = "0xa4b1"; // 42161 = Arbitrum One
 
 // ── Active config ──────────────────────────────────────────────
-const BRIDGE_ADDRESS  = IS_TESTNET ? TESTNET_BRIDGE   : MAINNET_BRIDGE;
-const USDC_ADDRESS    = IS_TESTNET ? TESTNET_USDC     : MAINNET_USDC;
-const TARGET_CHAIN_ID = IS_TESTNET ? TESTNET_CHAIN_ID : MAINNET_CHAIN_ID;
-const VIEM_CHAIN      = IS_TESTNET ? arbitrumSepolia  : arbitrum; // ← correct viem chain object
+const BRIDGE_ADDRESS = isTestnet ? TESTNET_BRIDGE : MAINNET_BRIDGE;
+const USDC_ADDRESS = isTestnet ? TESTNET_USDC : MAINNET_USDC;
+const TARGET_CHAIN_ID = isTestnet ? TESTNET_CHAIN_ID : MAINNET_CHAIN_ID;
+const VIEM_CHAIN = isTestnet ? arbitrumSepolia : arbitrum; // ← correct viem chain object
 
 const getProvider = () => {
     if (!window.ethereum) throw new Error("No wallet found");
@@ -43,7 +42,7 @@ const getExchangeClient = async () => {
     });
 
     return new ExchangeClient({
-        transport: new HttpTransport({ isTestnet: IS_TESTNET }),
+        transport: new HttpTransport({ isTestnet }),
         wallet,
     });
 };
@@ -67,13 +66,13 @@ export async function depositUSDC(amount) {
                 method: "wallet_addEthereumChain",
                 params: [{
                     chainId: TARGET_CHAIN_ID,
-                    chainName: IS_TESTNET ? "Arbitrum Sepolia" : "Arbitrum One",
+                    chainName: isTestnet ? "Arbitrum Sepolia" : "Arbitrum One",
                     nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-                    rpcUrls: [IS_TESTNET
+                    rpcUrls: [isTestnet
                         ? "https://sepolia-rollup.arbitrum.io/rpc"
                         : "https://arb1.arbitrum.io/rpc"
                     ],
-                    blockExplorerUrls: [IS_TESTNET
+                    blockExplorerUrls: [isTestnet
                         ? "https://sepolia.arbiscan.io"
                         : "https://arbiscan.io"
                     ],
