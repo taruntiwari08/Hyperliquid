@@ -22,9 +22,7 @@ const BUILDER_ADDRESS = process.env.BUILDER_ADDRESS;
 const BUILDER_FEE_TENTHS_BP = Number(process.env.BUILDER_FEE_TENTHS_BP || 100);
 
 async function getApprovedAgentForUser(userAddress) {
-    const agent = await AgentWallet.findOne({
-        userAddress,
-    });
+    const agent = await AgentWallet.findOne({ userAddress });
 
     if (!agent) {
         throw new Error("Agent not created for this user");
@@ -39,11 +37,7 @@ async function getApprovedAgentForUser(userAddress) {
     }
 
     const privateKey = decryptPrivateKey(agent.encryptedPrivateKey);
-
-    return {
-        agent,
-        privateKey,
-    };
+    return { agent, privateKey };
 }
 
 export async function openTrade(req, res) {
@@ -58,32 +52,16 @@ export async function openTrade(req, res) {
             slPrice,
         } = req.body;
 
-        const error = validateTradeInput({
-            userAddress,
-            coin,
-            isLong,
-            margin,
-            leverage,
-        });
+        const error = validateTradeInput({ userAddress, coin, isLong, margin, leverage });
+        if (error) return res.status(400).json({ error });
 
-        if (error) {
-            return res.status(400).json({ error });
-        }
-
-        if (!converter) {
-            return res.status(500).json({
-                error: "System not ready",
-            });
-        }
+        if (!converter) return res.status(500).json({ error: "System not ready" });
 
         const normalizedUser = normalizeAddress(userAddress);
 
         const result = await withUserLock(normalizedUser, async () => {
-            const { agent, privateKey } =
-                await getApprovedAgentForUser(normalizedUser);
-
-            const exchangeClient =
-                createExchangeClientFromPrivateKey(privateKey);
+            const { agent, privateKey } = await getApprovedAgentForUser(normalizedUser);
+            const exchangeClient = createExchangeClientFromPrivateKey(privateKey);
 
             const assetId = converter.getAssetId(coin);
             const szDecimals = converter.getSzDecimals(coin);
@@ -101,53 +79,41 @@ export async function openTrade(req, res) {
             const mids = await infoClient.allMids();
             const mid = Number(mids[coin]);
 
-            if (!mid || isNaN(mid)) {
-                throw new Error("Invalid market price");
-            }
+            if (!mid || isNaN(mid)) throw new Error("Invalid market price");
 
-            // ===============================
-            // ✅ BACKEND TP/SL VALIDATION
-            // ===============================
-            if (tpPrice && Number(tpPrice) > 0) {
+            // ── TP/SL validation against live mid ────────────────────────
+            const hasTp = tpPrice != null && Number(tpPrice) > 0;
+            const hasSl = slPrice != null && Number(slPrice) > 0;
+
+            if (hasTp) {
                 const tp = Number(tpPrice);
-
                 if (isLong && tp <= mid) {
                     throw new Error("For LONG, take profit must be above market price");
                 }
-
                 if (!isLong && tp >= mid) {
                     throw new Error("For SHORT, take profit must be below market price");
                 }
             }
 
-            if (slPrice && Number(slPrice) > 0) {
+            if (hasSl) {
                 const sl = Number(slPrice);
-
                 if (isLong && sl >= mid) {
                     throw new Error("For LONG, stop loss must be below market price");
                 }
-
                 if (!isLong && sl <= mid) {
                     throw new Error("For SHORT, stop loss must be above market price");
                 }
             }
 
+            // ── Position sizing ───────────────────────────────────────────
             const userMargin = Number(margin);
             const userLeverage = Number(leverage);
-
-            if (!userMargin || userMargin <= 0) {
-                throw new Error("Invalid margin");
-            }
+            if (!userMargin || userMargin <= 0) throw new Error("Invalid margin");
 
             const positionValue = userMargin * userLeverage;
-
-            // ✅ Hyperliquid size is coin amount:
-            // coinSize = margin * leverage / price
             const rawCoinSize = positionValue / mid;
 
             const tolerance = 0.01;
-
-            // ✅ IOC aggressive limit order, behaves like market order
             const entryPrice = mid * (isLong ? 1 + tolerance : 1 - tolerance);
 
             const formattedEntryPrice = formatPrice(entryPrice, szDecimals);
@@ -157,6 +123,7 @@ export async function openTrade(req, res) {
                 throw new Error("Invalid order size after formatting");
             }
 
+            // ── Entry order (IOC — behaves like market) ───────────────────
             const orders = [
                 {
                     a: assetId,
@@ -168,65 +135,83 @@ export async function openTrade(req, res) {
                 },
             ];
 
-            // ✅ Trigger close order side is opposite of entry.
-            // LONG close = sell below market.
-            // SHORT close = buy above market.
-            const closeLimitPrice = mid * (isLong ? 0.99 : 1.01);
-            const formattedCloseLimitPrice = formatPrice(
-                closeLimitPrice,
-                szDecimals
-            );
 
-            // ===============================
-            // ✅ OPTIONAL TAKE PROFIT
-            // ===============================
-            if (tpPrice && Number(tpPrice) > 0) {
-                const tp = Number(tpPrice);
+            const grouping = (hasTp && hasSl) ? "normalTpsl" : "na";
+            const CLOSE_TOLERANCE = 0.001;
+
+            // Helper to calculate trigger and limit prices for TP/SL orders
+                const getTriggerOrder = ({
+                    triggerPrice,
+                    isLong,
+                    type, // "tp" | "sl"
+                }) => {
+
+                    const trigger = Number(triggerPrice);
+
+                    // Closing LONG = SELL
+                    // Closing SHORT = BUY
+                    const limitPrice = isLong
+                        ? trigger * (1 - CLOSE_TOLERANCE)
+                        : trigger * (1 + CLOSE_TOLERANCE);
+
+                    return {
+                        triggerPx: formatPrice(trigger, szDecimals),
+                        limitPx: formatPrice(limitPrice, szDecimals),
+                        tpsl: type,
+                    };
+                };
+
+           if (tpPrice && Number(tpPrice) > 0) {
+
+                const tpOrder = getTriggerOrder({
+                    triggerPrice: tpPrice,
+                    isLong,
+                    type: "tp",
+                });
 
                 orders.push({
                     a: assetId,
                     b: !isLong,
-                    p: formattedCloseLimitPrice,
+                    p: tpOrder.limitPx,
                     s: formattedSize,
                     r: true,
                     t: {
                         trigger: {
                             isMarket: true,
-                            triggerPx: formatPrice(tp, szDecimals),
-                            tpsl: "tp",
+                            triggerPx: tpOrder.triggerPx,
+                            tpsl: tpOrder.tpsl,
                         },
                     },
                 });
             }
 
-            // ===============================
-            // ✅ OPTIONAL STOP LOSS
-            // ===============================
             if (slPrice && Number(slPrice) > 0) {
-                const sl = Number(slPrice);
+
+                const slOrder = getTriggerOrder({
+                    triggerPrice: slPrice,
+                    isLong,
+                    type: "sl",
+                });
 
                 orders.push({
                     a: assetId,
                     b: !isLong,
-                    p: formattedCloseLimitPrice,
+                    p: slOrder.limitPx,
                     s: formattedSize,
                     r: true,
                     t: {
                         trigger: {
                             isMarket: true,
-                            triggerPx: formatPrice(sl, szDecimals),
-                            tpsl: "sl",
+                            triggerPx: slOrder.triggerPx,
+                            tpsl: slOrder.tpsl,
                         },
                     },
                 });
-            }
-
-            const grouping = orders.length > 1 ? "normalTpsl" : "na";
+}
 
             const orderPayload = {
                 orders,
                 grouping,
-
                 builder: {
                     b: BUILDER_ADDRESS,
                     f: BUILDER_FEE_TENTHS_BP,
@@ -244,9 +229,10 @@ export async function openTrade(req, res) {
                 rawCoinSize,
                 formattedSize,
                 formattedEntryPrice,
-                closeLimitPrice: formattedCloseLimitPrice,
-                tpPrice: tpPrice || null,
-                slPrice: slPrice || null,
+                hasTp,
+                hasSl,
+                tpPrice: hasTp ? tpPrice : null,
+                slPrice: hasSl ? slPrice : null,
                 grouping,
                 builder: BUILDER_ADDRESS,
                 builderFeeTenthsBp: BUILDER_FEE_TENTHS_BP,
@@ -269,8 +255,8 @@ export async function openTrade(req, res) {
                     price: formattedEntryPrice,
                     notionalUsd: Number(formattedSize) * mid,
                     leverage: userLeverage,
-                    tpPrice: tpPrice || null,
-                    slPrice: slPrice || null,
+                    tpPrice: hasTp ? tpPrice : null,
+                    slPrice: hasSl ? slPrice : null,
                     grouping,
                     builder: BUILDER_ADDRESS,
                     builderFeeTenthsBp: BUILDER_FEE_TENTHS_BP,
@@ -278,56 +264,32 @@ export async function openTrade(req, res) {
             };
         });
 
-        res.json({
-            success: true,
-            result: result.orderResult,
-            meta: result.meta,
-        });
+        res.json({ success: true, result: result.orderResult, meta: result.meta });
     } catch (err) {
         console.error("❌ TRADE ERROR:", err);
 
-        if (err?.message?.includes("Agent not created")) {
-            return res.status(400).json({
-                error: "Agent not created. Create and approve agent first.",
-            });
+        const msg = err?.message || "";
+
+        if (msg.includes("Agent not created")) {
+            return res.status(400).json({ error: "Agent not created. Create and approve agent first." });
+        }
+        if (msg.includes("Agent not approved")) {
+            return res.status(400).json({ error: "Agent not approved. Approve agent first." });
+        }
+        if (msg.includes("Agent expired")) {
+            return res.status(400).json({ error: msg });
+        }
+        if (msg.includes("Builder fee has not been approved")) {
+            return res.status(400).json({ error: "Builder fee has not been approved." });
+        }
+        if (msg.includes("does not exist")) {
+            return res.status(400).json({ error: "User not onboarded. Deposit funds first." });
+        }
+        if (msg.includes("take profit") || msg.includes("stop loss")) {
+            return res.status(400).json({ error: msg });
         }
 
-        if (err?.message?.includes("Agent not approved")) {
-            return res.status(400).json({
-                error: "Agent not approved. Approve agent first.",
-            });
-        }
-
-        if (err?.message?.includes("Agent expired")) {
-            return res.status(400).json({
-                error: err.message,
-            });
-        }
-
-        if (err?.message?.includes("Builder fee has not been approved")) {
-            return res.status(400).json({
-                error: "Builder fee has not been approved.",
-            });
-        }
-
-        if (err?.message?.includes("does not exist")) {
-            return res.status(400).json({
-                error: "User not onboarded. Deposit funds first.",
-            });
-        }
-
-        if (
-            err?.message?.includes("take profit") ||
-            err?.message?.includes("stop loss")
-        ) {
-            return res.status(400).json({
-                error: err.message,
-            });
-        }
-
-        res.status(500).json({
-            error: err.message || "trade failed",
-        });
+        res.status(500).json({ error: msg || "trade failed" });
     }
 }
 
@@ -337,30 +299,13 @@ export async function closePosition(req, res) {
 
         const normalizedUser = normalizeAddress(address);
 
-        if (!coin) {
-            return res.status(400).json({
-                error: "coin required",
-            });
-        }
-
-        if (!normalizedUser) {
-            return res.status(400).json({
-                error: "valid user address required",
-            });
-        }
-
-        if (!converter) {
-            return res.status(500).json({
-                error: "system not ready",
-            });
-        }
+        if (!coin) return res.status(400).json({ error: "coin required" });
+        if (!normalizedUser) return res.status(400).json({ error: "valid user address required" });
+        if (!converter) return res.status(500).json({ error: "system not ready" });
 
         const result = await withUserLock(normalizedUser, async () => {
-            const { agent, privateKey } =
-                await getApprovedAgentForUser(normalizedUser);
-
-            const exchangeClient =
-                createExchangeClientFromPrivateKey(privateKey);
+            const { agent, privateKey } = await getApprovedAgentForUser(normalizedUser);
+            const exchangeClient = createExchangeClientFromPrivateKey(privateKey);
 
             const assetId = converter.getAssetId(coin);
             const szDecimals = converter.getSzDecimals(coin);
@@ -369,18 +314,11 @@ export async function closePosition(req, res) {
                 throw new Error("invalid asset");
             }
 
-            const state = await infoClient.clearinghouseState({
-                user: normalizedUser,
-            });
-
-            const position = state.assetPositions.find(
-                (p) => p.position.coin === coin
-            );
+            const state = await infoClient.clearinghouseState({ user: normalizedUser });
+            const position = state.assetPositions.find(p => p.position.coin === coin);
 
             if (!position || Number(position.position.szi) === 0) {
-                return {
-                    noPosition: true,
-                };
+                return { noPosition: true };
             }
 
             const rawSize = Number(position.position.szi);
@@ -390,11 +328,9 @@ export async function closePosition(req, res) {
             const mids = await infoClient.allMids();
             const mid = Number(mids[coin]);
 
-            if (!mid || isNaN(mid)) {
-                throw new Error("invalid market price");
-            }
+            if (!mid || isNaN(mid)) throw new Error("invalid market price");
 
-            const tolerance = 0.01;
+            const tolerance = 0.003; // 0.3% price tolerance for closing
             const price = mid * (isLong ? 1 - tolerance : 1 + tolerance);
 
             const formattedPrice = formatPrice(price, szDecimals);
@@ -412,7 +348,6 @@ export async function closePosition(req, res) {
                     },
                 ],
                 grouping: "na",
-
                 builder: {
                     b: BUILDER_ADDRESS,
                     f: BUILDER_FEE_TENTHS_BP,
@@ -422,21 +357,11 @@ export async function closePosition(req, res) {
             agent.lastUsedAt = new Date();
             await agent.save();
 
-            return {
-                noPosition: false,
-                closeResult,
-                coin,
-                sideClosed: isLong ? "LONG" : "SHORT",
-                size: formattedSize,
-                price: formattedPrice,
-            };
+            return { noPosition: false, closeResult, coin, sideClosed: isLong ? "LONG" : "SHORT", size: formattedSize, price: formattedPrice };
         });
 
         if (result.noPosition) {
-            return res.json({
-                success: false,
-                message: "No open position",
-            });
+            return res.json({ success: false, message: "No open position" });
         }
 
         res.json({
@@ -451,20 +376,15 @@ export async function closePosition(req, res) {
     } catch (err) {
         console.error("❌ CLOSE ERROR:", err);
 
-        if (err?.message?.includes("Agent not created")) {
-            return res.status(400).json({
-                error: "Agent not created. Create and approve agent first.",
-            });
+        const msg = err?.message || "";
+
+        if (msg.includes("Agent not created")) {
+            return res.status(400).json({ error: "Agent not created. Create and approve agent first." });
+        }
+        if (msg.includes("Agent not approved")) {
+            return res.status(400).json({ error: "Agent not approved. Approve agent first." });
         }
 
-        if (err?.message?.includes("Agent not approved")) {
-            return res.status(400).json({
-                error: "Agent not approved. Approve agent first.",
-            });
-        }
-
-        res.status(500).json({
-            error: err.message || "close failed",
-        });
+        res.status(500).json({ error: msg || "close failed" });
     }
 }

@@ -16,6 +16,68 @@ async function hlPost(body) {
     try { return JSON.parse(text); } catch { return text; }
 }
 
+function aggregateFills(fills) {
+
+    if (!fills.length) return [];
+
+    const grouped = [];
+
+    // milliseconds window
+    const GROUP_WINDOW = 2000;
+
+    for (const fill of fills) {
+
+        const last = grouped[grouped.length - 1];
+
+        const canMerge =
+            last &&
+            last.coin === fill.coin &&
+            last.dir === fill.dir &&
+            last.side === fill.side &&
+            Math.abs(last.time - fill.time) <= GROUP_WINDOW;
+
+        if (canMerge) {
+
+            const totalSize =
+                Number(last.size) + Number(fill.size);
+
+            const totalValue =
+                Number(last.value) + Number(fill.value);
+
+            const weightedPrice =
+                totalValue / totalSize;
+
+            last.size = totalSize;
+            last.value = totalValue;
+            last.price = weightedPrice;
+
+            last.closedPnl =
+                Number(last.closedPnl) +
+                Number(fill.closedPnl || 0);
+
+            last.fee =
+                Number(last.fee) +
+                Number(fill.fee || 0);
+
+            // newest fill time
+            last.time = Math.max(last.time, fill.time);
+
+        } else {
+
+            grouped.push({
+                ...fill,
+                size: Number(fill.size),
+                value: Number(fill.value),
+                price: Number(fill.price),
+                closedPnl: Number(fill.closedPnl || 0),
+                fee: Number(fill.fee || 0),
+            });
+        }
+    }
+
+    return grouped;
+}
+
 // ────────────────────────────────────────────
 // GET TRADE HISTORY  (userFillsByTime)
 // Params: address, startTime?, endTime?, limit?
@@ -63,9 +125,18 @@ export async function getTradeHistory(req, res) {
         }));
 
         // Sort newest first
-        normalized.sort((a, b) => b.time - a.time);
+       normalized.sort((a, b) => a.time - b.time);
 
-        res.json({ address, fills: normalized, count: normalized.length });
+        const aggregated = aggregateFills(normalized);
+
+        // newest first
+        aggregated.sort((a, b) => b.time - a.time);
+
+        res.json({
+            address,
+            fills: aggregated,
+            count: aggregated.length,
+        });
     } catch (err) {
         console.error("❌ TRADE HISTORY ERROR:", err);
         res.status(500).json({ error: err.message || "Failed to fetch trade history" });

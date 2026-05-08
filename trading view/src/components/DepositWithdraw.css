@@ -1,37 +1,37 @@
-.transfer-panel { overflow: hidden; animation: fadeUp 0.3s ease 0.1s both; }
+.transfer-panel { overflow: hidden; }
 
 .balance-tag {
   font-size: 12px;
-  color: var(--orange-bright);
-  background: rgba(255,152,0,0.08);
-  border: 1px solid rgba(255,152,0,0.15);
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border);
   padding: 3px 10px;
   border-radius: 99px;
+  font-family: var(--mono);
 }
 
 .transfer-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
-  border-bottom: 1px solid rgba(255,152,0,0.08);
+  border-bottom: 1px solid rgba(0,212,255,0.07);
 }
 
 .transfer-tab {
   padding: 10px;
   font-size: 13px;
   font-weight: 600;
-  font-family: var(--font-main);
+  font-family: var(--font);
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   border-bottom: 2px solid transparent;
-  transition: all var(--transition);
+  transition: all var(--t);
   margin-bottom: -1px;
 }
 .transfer-tab:hover { color: var(--text-secondary); }
-.transfer-tab.deposit.active { color: #60a5fa; border-bottom-color: #60a5fa; }
-.transfer-tab.withdraw.active { color: var(--orange-bright); border-bottom-color: var(--orange); }
+.transfer-tab.deposit.active  { color: #60a5fa; border-bottom-color: #60a5fa; }
+.transfer-tab.withdraw.active { color: var(--cyan); border-bottom-color: var(--cyan); }
 
 .transfer-body {
   padding: 14px 16px 16px;
@@ -49,7 +49,7 @@
   line-height: 1.5;
   padding: 8px 10px;
   background: rgba(255,255,255,0.03);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-md);
 }
 .info-icon { font-size: 12px; opacity: 0.6; flex-shrink: 0; margin-top: 1px; }
 .transfer-info strong { color: var(--text-secondary); }
@@ -63,7 +63,7 @@
   padding: 8px 10px;
   background: rgba(255,77,106,0.07);
   border: 1px solid rgba(255,77,106,0.15);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-md);
 }
 
 .transfer-success {
@@ -73,24 +73,24 @@
   padding: 8px 10px;
   background: rgba(0,229,160,0.07);
   border: 1px solid rgba(0,229,160,0.15);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-md);
   text-decoration: none;
-  font-family: var(--font-mono);
-  transition: opacity var(--transition);
+  font-family: var(--mono);
+  transition: opacity var(--t);
 }
 .transfer-success:hover { opacity: 0.8; }
 
-.max-btn { color: var(--orange) !important; border-color: rgba(255,152,0,0.2) !important; }
+.max-btn { color: var(--cyan) !important; border-color: var(--cyan-border) !important; }
 
 .transfer-btn {
   width: 100%;
-  padding: 12px;
+  padding: 11px;
   font-size: 13px;
   font-weight: 600;
-  font-family: var(--font-main);
-  border-radius: var(--radius-md);
+  font-family: var(--font);
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all var(--t);
   border: 1px solid transparent;
 }
 .transfer-btn.deposit {
@@ -103,12 +103,35 @@
   transform: translateY(-1px);
 }
 .transfer-btn.withdraw {
-  background: rgba(255,152,0,0.12);
-  border-color: rgba(255,152,0,0.3);
-  color: var(--orange-bright);
+  background: var(--cyan-dim);
+  border-color: var(--cyan-border);
+  color: var(--cyan);
 }
 .transfer-btn.withdraw:hover:not(:disabled) {
-  background: rgba(255,152,0,0.18);
+  background: rgba(0,212,255,0.18);
   transform: translateY(-1px);
 }
 .transfer-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* The panel header is handled by portfolio-dropdown-header in Header.css,
+   but keep .panel-header styles compatible if used standalone */
+.transfer-panel .panel-header { display: none; } /* hidden when inside portfolio dropdown */
+.transfer-panel .panel-empty  {
+  padding: 20px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Input overrides for transfer panel */
+.transfer-panel .trade-input {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,212,255,0.1);
+}
+.transfer-panel .trade-input:focus {
+  border-color: rgba(0,212,255,0.4);
+}
+.transfer-panel .pct-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan-border);
+}

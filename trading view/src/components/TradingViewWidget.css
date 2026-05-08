@@ -1,13 +1,27 @@
 .chart-wrapper {
-  height: 520px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  padding: 0;
+  position: relative;
 }
 
-@media (max-width: 1100px) {
-  .chart-wrapper { height: 440px; }
+/* Desktop inside center-col: fill available height */
+.center-col .chart-wrapper {
+  min-height: 300px;
 }
 
-@media (max-width: 768px) {
-  .chart-wrapper { height: 320px; }
+/* Mobile chart view: fixed height */
+.mobile-chart-view .chart-wrapper {
+  height: calc(100dvh - 50px - 36px - 40px - 220px);
+  min-height: 260px;
+}
+
+.tradingview-widget-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.tradingview-widget-container__widget {
+  width: 100% !important;
+  height: 100% !important;
 }
