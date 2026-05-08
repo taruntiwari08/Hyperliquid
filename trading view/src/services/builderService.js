@@ -1,6 +1,7 @@
 import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
 import { createWalletClient, custom } from "viem";
 import { arbitrum } from "viem/chains";
+import { BASE_URL, isTestnet } from "../config/base";
 
 const getMetaMaskProvider = () => {
     if (!window.ethereum) {
@@ -40,7 +41,7 @@ export async function approveBuilderFee(builderAddress, feeRate) {
         });
 
         const client = new ExchangeClient({
-            transport: new HttpTransport({ isTestnet: true }),
+            transport: new HttpTransport({ isTestnet }),
             wallet,
         });
 
