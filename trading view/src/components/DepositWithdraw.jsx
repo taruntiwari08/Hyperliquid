@@ -46,19 +46,13 @@ export default function DepositWithdraw() {
   }
 
   if (!isConnected) return (
-    <div className="transfer-panel glass">
-      <div className="panel-header"><span className="panel-title">Transfer</span></div>
+    <div className="transfer-panel">
       <div className="panel-empty">Connect wallet to transfer funds</div>
     </div>
   )
 
   return (
-    <div className="transfer-panel glass fade-up">
-      <div className="panel-header">
-        <span className="panel-title">Transfer</span>
-        <span className="balance-tag num">${Number(bal).toFixed(2)} USDC</span>
-      </div>
-
+    <div className="transfer-panel">
       {/* Tab switcher */}
       <div className="transfer-tabs">
         <button className={`transfer-tab deposit ${tab === 'deposit' ? 'active' : ''}`} onClick={() => { setTab('deposit'); reset() }}>
@@ -73,13 +67,11 @@ export default function DepositWithdraw() {
         {/* Info */}
         <div className="transfer-info">
           {tab === 'deposit' ? (
-            <>
-              <span className="info-icon">ℹ</span>
+            <><span className="info-icon">ℹ</span>
               <span>Send USDC on <strong>Arbitrum Sepolia</strong>. Min $5. Wallet auto-switches network.</span>
             </>
           ) : (
-            <>
-              <span className="info-icon">ℹ</span>
+            <><span className="info-icon">ℹ</span>
               <span>Withdraws to <strong>{address?.slice(0,6)}...{address?.slice(-4)}</strong> on Arbitrum. ~5 min.</span>
             </>
           )}
@@ -111,14 +103,10 @@ export default function DepositWithdraw() {
           )}
         </div>
 
-        {/* Error */}
         {error && (
-          <div className="transfer-error">
-            <span>⚠</span> {error}
-          </div>
+          <div className="transfer-error"><span>⚠</span> {error}</div>
         )}
 
-        {/* Tx hash */}
         {txHash && (
           <a
             className="transfer-success"
@@ -130,7 +118,6 @@ export default function DepositWithdraw() {
           </a>
         )}
 
-        {/* CTA */}
         <button
           className={`transfer-btn ${tab}`}
           onClick={tab === 'deposit' ? handleDeposit : handleWithdraw}

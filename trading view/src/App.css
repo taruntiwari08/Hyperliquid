@@ -6,21 +6,42 @@
   overflow: hidden;
 }
 
-/* ── Trade page layout ── */
+/* ── Trade page outer wrapper ── */
 .trading-layout {
-  display: grid;
-  grid-template-columns: 1fr 360px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
-.chart-area {
+/* Full-page wrapper for History / Portfolio routes */
+.full-page {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  background: var(--bg-base);
+  min-height: 0;
+}
+
+/* ═══════════════════════════════════════
+   DESKTOP  ≥ 901px
+   [ Chart + BottomTabs ] | [ Right col ]
+   ═══════════════════════════════════════ */
+.desktop-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Center column: chart + bottom tabs */
+.center-col {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border-right: 1px solid rgba(0,212,255,0.07);
   overflow: hidden;
+  border-right: 1px solid rgba(0, 212, 255, 0.07);
 }
 
 .chart-wrap {
@@ -31,86 +52,108 @@
 
 .bottom-area {
   height: 240px;
-  border-top: 1px solid rgba(0,212,255,0.07);
+  border-top: 1px solid rgba(0, 212, 255, 0.07);
   overflow: hidden;
   flex-shrink: 0;
 }
 
-.right-sidebar {
+/* Right column: TradePanel + OrderBook */
+.right-col {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: rgba(1, 8, 16, 0.55);
+}
+
+.right-col-inner {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-col-inner > * + * {
+  border-top: 1px solid rgba(0, 212, 255, 0.07);
+}
+
+/* ═══════════════════════════════════════
+   MOBILE  ≤ 900px
+   ═══════════════════════════════════════ */
+.mobile-layout { display: none; }
+
+.mobile-view-bar {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  background: rgba(1, 8, 16, 0.97);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  flex-shrink: 0;
+  padding: 0 4px;
+  gap: 2px;
+}
+
+.mvb-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--t);
+}
+.mvb-btn:hover  { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+.mvb-btn.active { color: var(--cyan); background: rgba(0, 212, 255, 0.1); }
+
+.mobile-panel-content {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
 }
-.right-sidebar > * + * {
-  border-top: 1px solid rgba(0,212,255,0.07);
+
+.mobile-chart-view {
+  height: calc(100dvh - 50px - 34px - 40px - 220px);
+  min-height: 260px;
 }
 
-/* ── History page ── */
-.history-page {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  background: var(--bg-base);
+.mobile-bottom-tabs {
+  flex-shrink: 0;
+  height: 220px;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+  overflow: hidden;
+  background: rgba(1, 8, 16, 0.98);
 }
 
-/* ── Mobile ── */
+/* ═══════════════════════════════════════
+   BREAKPOINTS
+   ═══════════════════════════════════════ */
 @media (max-width: 900px) {
-  .app-shell { height: 100dvh; }
-
-  .trading-layout {
-    grid-template-columns: 1fr;
-    position: relative;
+  .app-shell    { height: 100dvh; }
+  .desktop-layout { display: none; }
+  .mobile-layout  {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     overflow: hidden;
   }
-
-  .chart-area {
-    border-right: none;
-    height: 100%;
-  }
-
-  .right-sidebar {
-    position: fixed;
-    top: 0; right: 0;
-    width: min(380px, 100vw);
-    height: 100dvh;
-    z-index: 150;
-    background: rgba(1,12,18,0.97);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-left: 1px solid rgba(0,212,255,0.15);
-    transform: translateX(100%);
-    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-    overflow-y: auto;
-  }
-  .right-sidebar.open { transform: translateX(0); }
-
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 140;
-    backdrop-filter: blur(4px);
-  }
-  .sidebar-overlay.visible { display: block; }
-
-  .bottom-area { height: auto; }
-
-  .history-page { padding: 8px; }
+  .full-page { padding: 10px; }
 }
 
-@media (min-width: 901px) {
-  .sidebar-overlay  { display: none !important; }
-  .right-sidebar    { transform: none !important; }
+@media (min-width: 901px) and (max-width: 1100px) {
+  .desktop-layout { grid-template-columns: 1fr 300px; }
 }
 
-.sidebar-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar-content > * + * {
-  border-top: 1px solid rgba(0,212,255,0.07);
+@media (min-width: 1400px) {
+  .desktop-layout { grid-template-columns: 1fr 360px; }
 }

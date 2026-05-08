@@ -27,8 +27,8 @@ export default function BottomTabs() {
   const TABS = [
     { id: 'positions', label: 'Positions',   count: positions.length, live: pLoading },
     { id: 'orders',    label: 'TP / SL',     count: orders.length,    live: oLoading },
-    { id: 'trades',    label: 'Trade History' },
-    { id: 'transfers', label: 'Transfers' },
+    // { id: 'trades',    label: 'Trade History' },
+    // { id: 'transfers', label: 'Transfers' },
   ]
 
   return (

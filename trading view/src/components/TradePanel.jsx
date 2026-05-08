@@ -10,7 +10,6 @@ import './TradePanel.css'
 import CoinSearch from './CoinSearch'
 import { BUILDER_ADDRESS } from '../config/base'
 
-const COINS = ['BTC', 'ETH', 'SOL', 'ARB', 'AVAX']
 const LEVERAGES = [2, 5, 10, 20, 50]
 const BUILDER_FEE_RATE = '0.1%'
 const BUILDER_FEE_DECIMAL = 0.001
@@ -23,13 +22,15 @@ export default function TradePanel({ coin, setCoin }) {
   const balance = useBalance(address)
 
   const [side, setSide] = useState('long')
-  // const [coin, setCoin] = useState('BTC')
   const [leverage, setLeverage] = useState(10)
   const [margin, setMargin] = useState('')
   const [tpEnabled, setTpEnabled] = useState(false)
   const [slEnabled, setSlEnabled] = useState(false)
   const [tpPrice, setTpPrice] = useState('')
   const [slPrice, setSlPrice] = useState('')
+  // ✅ FIX 1: Track TP/SL validation errors separately for clear UX
+  const [tpError, setTpError] = useState('')
+  const [slError, setSlError] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [agentLoading, setAgentLoading] = useState(false)
@@ -58,6 +59,14 @@ export default function TradePanel({ coin, setCoin }) {
       .finally(() => setAgentLoading(false))
   }, [address])
 
+  // ✅ FIX 2: Clear TP/SL prices AND errors when side changes to avoid stale invalid values
+  useEffect(() => {
+    setTpPrice('')
+    setSlPrice('')
+    setTpError('')
+    setSlError('')
+  }, [side, coin])
+
   const price = Number(prices?.[coin] || 0)
   const bal = Number(balance || 0)
   const marginNum = Number(margin || 0)
@@ -71,13 +80,46 @@ export default function TradePanel({ coin, setCoin }) {
   const feeExchange = posValue * EXCHANGE_FEE
   const feeBuilder = posValue * BUILDER_FEE_DECIMAL
   const isReady = agentApproved && builderApproved
-  const canTrade = isReady && marginNum > 0 && marginNum <= bal && price > 0 && !loading
+
+  // ✅ FIX 3: Separate canTrade from the "not ready" path so the button works correctly
+  // When not ready, button should be clickable (to open modal), not disabled
+  const hasValidMargin = marginNum > 0 && marginNum <= bal && price > 0
+  const canTrade = isReady && hasValidMargin && !loading
 
   const pctButtons = [25, 50, 75, 100]
 
   const handlePct = (pct) => {
     if (!bal) return
     setMargin(((bal * pct) / 100).toFixed(2))
+  }
+
+  // ✅ FIX 4: Validate TP/SL inline as user types for immediate feedback
+  const handleTpChange = (val) => {
+    setTpPrice(val)
+    if (!val || !price) { setTpError(''); return }
+    const tp = Number(val)
+    if (isNaN(tp) || tp <= 0) { setTpError('Enter a valid price'); return }
+    if (side === 'long' && tp <= price) {
+      setTpError(`Must be above market price ($${fmtPrice(price)})`)
+    } else if (side === 'short' && tp >= price) {
+      setTpError(`Must be below market price ($${fmtPrice(price)})`)
+    } else {
+      setTpError('')
+    }
+  }
+
+  const handleSlChange = (val) => {
+    setSlPrice(val)
+    if (!val || !price) { setSlError(''); return }
+    const sl = Number(val)
+    if (isNaN(sl) || sl <= 0) { setSlError('Enter a valid price'); return }
+    if (side === 'long' && sl >= price) {
+      setSlError(`Must be below market price ($${fmtPrice(price)})`)
+    } else if (side === 'short' && sl <= price) {
+      setSlError(`Must be above market price ($${fmtPrice(price)})`)
+    } else {
+      setSlError('')
+    }
   }
 
   const handleEnableTrading = async () => {
@@ -103,37 +145,55 @@ export default function TradePanel({ coin, setCoin }) {
   }
 
   const handleTrade = async () => {
+    // ✅ FIX 5: Show modal if not ready (don't block with disabled)
     if (!isReady) { setShowModal(true); return }
     if (!canTrade) return
-    if (tpEnabled && tpPrice) {
-      const tp = Number(tpPrice)
-      if (side === 'long' && tp <= price) return alert('Take Profit must be above market price for LONG')
-      if (side === 'short' && tp >= price) return alert('Take Profit must be below market price for SHORT')
+
+    // ✅ FIX 6: Final client-side TP/SL guard — only block if there's an active error
+    if (tpEnabled && tpPrice && tpError) {
+      alert('❌ Fix Take Profit price: ' + tpError)
+      return
     }
-    if (slEnabled && slPrice) {
-      const sl = Number(slPrice)
-      if (side === 'long' && sl >= price) return alert('Stop Loss must be below market price for LONG')
-      if (side === 'short' && sl <= price) return alert('Stop Loss must be above market price for SHORT')
+    if (slEnabled && slPrice && slError) {
+      alert('❌ Fix Stop Loss price: ' + slError)
+      return
     }
+
+    // ✅ FIX 7: Don't send TP/SL if disabled OR if field is empty
+    // Send null explicitly so backend skips the order
+    const resolvedTp = (tpEnabled && tpPrice && Number(tpPrice) > 0) ? Number(tpPrice) : null
+    const resolvedSl = (slEnabled && slPrice && Number(slPrice) > 0) ? Number(slPrice) : null
+
     setLoading(true)
     try {
       const res = await placeTrade({
-        userAddress: address, coin,
+        userAddress: address,
+        coin,
         isLong: side === 'long',
-        margin: marginNum, leverage,
-        tpPrice: tpEnabled && tpPrice ? Number(tpPrice) : null,
-        slPrice: slEnabled && slPrice ? Number(slPrice) : null,
+        margin: marginNum,
+        leverage,
+        tpPrice: resolvedTp,
+        slPrice: resolvedSl,
       })
+
       if (res?.error) {
         if (res.error.includes('Builder') || res.error.includes('builder')) {
-          setBuilderApproved(false); if (builderKey) localStorage.removeItem(builderKey)
+          setBuilderApproved(false)
+          if (builderKey) localStorage.removeItem(builderKey)
           setShowModal(true)
         } else if (res.error.includes('Agent')) {
-          setAgentApproved(false); setShowModal(true)
-        } else alert('❌ ' + res.error)
+          setAgentApproved(false)
+          setShowModal(true)
+        } else {
+          alert('❌ ' + res.error)
+        }
       } else {
-        setMargin(''); setTpPrice(''); setSlPrice('')
-        alert('✅ Order placed')
+        setMargin('')
+        setTpPrice('')
+        setSlPrice('')
+        setTpError('')
+        setSlError('')
+        alert('✅ Order placed successfully!')
       }
     } catch (e) {
       alert('❌ ' + e.message)
@@ -143,6 +203,13 @@ export default function TradePanel({ coin, setCoin }) {
   }
 
   const fmtPrice = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  // ✅ FIX 8: Determine button disabled state correctly
+  // - Not connected: show ConnectButton instead
+  // - Not ready: button clickable (opens modal)
+  // - Ready but invalid trade params: disabled
+  // - Loading: disabled
+  const buttonDisabled = loading || agentLoading || (isReady && !canTrade)
 
   return (
     <>
@@ -223,50 +290,70 @@ export default function TradePanel({ coin, setCoin }) {
 
         {/* TP/SL toggles */}
         <div className="tpsl-section">
+          {/* Take Profit */}
           <div className="tpsl-row">
             <label className="field-label">Take Profit</label>
             <button
               className={`toggle ${tpEnabled ? 'on' : ''}`}
-              onClick={() => setTpEnabled(!tpEnabled)}
+              onClick={() => {
+                setTpEnabled(!tpEnabled)
+                if (tpEnabled) { setTpPrice(''); setTpError('') }
+              }}
               aria-label="Toggle Take Profit"
             >
               <span className="toggle-thumb" />
             </button>
           </div>
           {tpEnabled && (
-            <div className="input-wrapper mt-6">
-              <input
-                type="number"
-                className="trade-input"
-                placeholder={side === 'long' ? `Above $${fmtPrice(price)}` : `Below $${fmtPrice(price)}`}
-                value={tpPrice}
-                onChange={e => setTpPrice(e.target.value)}
-              />
-              <span className="input-suffix tp">TP</span>
-            </div>
+            <>
+              <div className="input-wrapper mt-6">
+                <input
+                  type="number"
+                  className={`trade-input ${tpError ? 'input-error' : ''}`}
+                  placeholder={side === 'long' ? `Above $${fmtPrice(price)}` : `Below $${fmtPrice(price)}`}
+                  value={tpPrice}
+                  onChange={e => handleTpChange(e.target.value)}
+                />
+                <span className="input-suffix tp">TP</span>
+              </div>
+              {/* ✅ FIX 9: Show inline error message */}
+              {tpError && (
+                <div className="tpsl-error">⚠ {tpError}</div>
+              )}
+            </>
           )}
 
+          {/* Stop Loss */}
           <div className="tpsl-row" style={{ marginTop: '10px' }}>
             <label className="field-label">Stop Loss</label>
             <button
               className={`toggle ${slEnabled ? 'on' : ''}`}
-              onClick={() => setSlEnabled(!slEnabled)}
+              onClick={() => {
+                setSlEnabled(!slEnabled)
+                if (slEnabled) { setSlPrice(''); setSlError('') }
+              }}
               aria-label="Toggle Stop Loss"
             >
               <span className="toggle-thumb" />
             </button>
           </div>
           {slEnabled && (
-            <div className="input-wrapper mt-6">
-              <input
-                type="number"
-                className="trade-input"
-                placeholder={side === 'long' ? `Below $${fmtPrice(price)}` : `Above $${fmtPrice(price)}`}
-                value={slPrice}
-                onChange={e => setSlPrice(e.target.value)}
-              />
-              <span className="input-suffix sl">SL</span>
-            </div>
+            <>
+              <div className="input-wrapper mt-6">
+                <input
+                  type="number"
+                  className={`trade-input ${slError ? 'input-error' : ''}`}
+                  placeholder={side === 'long' ? `Below $${fmtPrice(price)}` : `Above $${fmtPrice(price)}`}
+                  value={slPrice}
+                  onChange={e => handleSlChange(e.target.value)}
+                />
+                <span className="input-suffix sl">SL</span>
+              </div>
+              {/* ✅ FIX 9: Show inline error message */}
+              {slError && (
+                <div className="tpsl-error">⚠ {slError}</div>
+              )}
+            </>
           )}
         </div>
 
@@ -289,13 +376,13 @@ export default function TradePanel({ coin, setCoin }) {
               <span>Est. liquidation</span>
               <span className="num">${fmtPrice(liqPrice)}</span>
             </div>
-            {tpEnabled && tpPrice && (
+            {tpEnabled && tpPrice && !tpError && (
               <div className="summary-row green">
                 <span>Take profit</span>
                 <span className="num">${fmtPrice(tpPrice)}</span>
               </div>
             )}
-            {slEnabled && slPrice && (
+            {slEnabled && slPrice && !slError && (
               <div className="summary-row red">
                 <span>Stop loss</span>
                 <span className="num">${fmtPrice(slPrice)}</span>
@@ -320,9 +407,9 @@ export default function TradePanel({ coin, setCoin }) {
           </div>
         ) : (
           <button
-            className={`trade-btn ${side} ${canTrade || !isReady ? '' : 'disabled'}`}
+            className={`trade-btn ${side} ${buttonDisabled ? 'disabled' : ''}`}
             onClick={handleTrade}
-            disabled={loading || agentLoading || (isReady && !canTrade)}
+            disabled={buttonDisabled}
           >
             {loading
               ? <span className="btn-loading"><span className="spinner" /> Executing...</span>
