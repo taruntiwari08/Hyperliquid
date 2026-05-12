@@ -20,7 +20,7 @@ export function usePositions(address) {
 
                 const [positionsRes, pricesRes] = await Promise.all([
                     fetch(`${BASE_URL}/positions/${address}`),
-                    fetch(`${BASE_URL}/prices`),
+                    fetch(`${BASE_URL}/market-contexts`),
                 ]);
 
                 const positionsData = await positionsRes.json();

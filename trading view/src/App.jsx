@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import Header from './components/Header'
 import TickerBar from './components/TickerBar'
 import TradingViewWidget from './components/TradingViewWidget'
+import HyperliquidChart from './components/HyperliquidChart'
 import TradePanel from './components/TradePanel'
 import BottomTabs from './components/BottomTabs'
 import History from './components/History'
@@ -44,7 +45,8 @@ export default function App() {
           <div className="desktop-layout">
             <div className="center-col">
               <div className="chart-wrap">
-                <TradingViewWidget coin={selectedCoin} />
+                {/* <TradingViewWidget coin={selectedCoin} /> */}
+                <HyperliquidChart coin={selectedCoin} />
               </div>
               <div className="bottom-area">
                 <BottomTabs selectedCoin={selectedCoin} />
@@ -63,9 +65,9 @@ export default function App() {
           <div className="mobile-layout">
             <div className="mobile-view-bar">
               {[
-                { id: 'trade', label: 'Trade', icon: <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M9 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-                { id: 'chart', label: 'Chart', icon: <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><polyline points="1,11 5,6 8,9 13,3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-                { id: 'book',  label: 'Book',  icon: <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="8" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+                { id: 'trade', label: 'Trade', icon: <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M9 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg> },
+                { id: 'chart', label: 'Chart', icon: <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><polyline points="1,11 5,6 8,9 13,3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg> },
+                { id: 'book', label: 'Book', icon: <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="8" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" /></svg> },
               ].map(v => (
                 <button key={v.id} className={`mvb-btn ${mobileView === v.id ? 'active' : ''}`} onClick={() => setMobileView(v.id)}>
                   {v.icon}{v.label}
@@ -76,7 +78,7 @@ export default function App() {
             <div className="mobile-panel-content">
               {mobileView === 'trade' && <TradePanel coin={selectedCoin} setCoin={handleSelectCoin} />}
               {mobileView === 'chart' && <div className="mobile-chart-view"><TradingViewWidget coin={selectedCoin} /></div>}
-              {mobileView === 'book'  && <OrderBook coin={selectedCoin} />}
+              {mobileView === 'book' && <OrderBook coin={selectedCoin} />}
             </div>
 
             <div className="mobile-bottom-tabs">

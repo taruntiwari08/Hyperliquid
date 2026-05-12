@@ -6,6 +6,7 @@ import tradeRoutes from "./routes/trade.routes.js";
 import marketRoutes from "./routes/market.routes.js";
 import accountRoutes from "./routes/account.routes.js";
 import historyRoutes from "./routes/history.routes.js";
+import chartRoutes from "./routes/chart.route.js";
 
 const app = express();
 
@@ -62,7 +63,8 @@ app.use("/agent", agentRoutes);
 app.use("/", tradeRoutes);
 app.use("/", marketRoutes);
 app.use("/", accountRoutes);
-app.use("/", historyRoutes);  
+app.use("/", historyRoutes);
+app.use("/", chartRoutes);
 
 app.get("/health", (req, res) => {
     res.json({
