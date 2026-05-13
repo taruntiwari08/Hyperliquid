@@ -77,7 +77,11 @@ export default function App() {
 
             <div className="mobile-panel-content">
               {mobileView === 'trade' && <TradePanel coin={selectedCoin} setCoin={handleSelectCoin} />}
-              {mobileView === 'chart' && <div className="mobile-chart-view"><TradingViewWidget coin={selectedCoin} /></div>}
+              {mobileView === 'chart' && (
+                <div className="mobile-chart-view">
+                  <HyperliquidChart coin={selectedCoin} />
+                </div>
+              )}
               {mobileView === 'book' && <OrderBook coin={selectedCoin} />}
             </div>
 

@@ -1,49 +1,61 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
+import { useAccount, useDisconnect } from 'wagmi'
 import { useBalance } from '../hooks/useBalance'
 import './Header.css'
 
 export default function Header({ activePage, onNavigate }) {
   const { address, isConnected } = useAccount()
+  const { disconnect } = useDisconnect()
   const balance = useBalance(address)
 
   return (
     <>
       <header className="header">
-        {/* Left: Logo + Nav */}
         <div className="header-left">
           <nav className="header-nav">
             <button
               className={`nav-link ${activePage === 'trade' ? 'active' : ''}`}
               onClick={() => onNavigate('trade')}
-            >Trade</button>
+            >
+              Trade
+            </button>
+
             <button
               className={`nav-link ${activePage === 'history' ? 'active' : ''}`}
               onClick={() => onNavigate('history')}
-            >History</button>
+            >
+              History
+            </button>
+
             <button
-                  className={`nav-link ${activePage === 'portfolio' ? 'active' : ''}`}
-                  onClick={() => onNavigate('portfolio')}
-                >
+              className={`nav-link ${activePage === 'portfolio' ? 'active' : ''}`}
+              onClick={() => onNavigate('portfolio')}
+            >
               Portfolio
               {isConnected && balance && (
-                <span className="nav-bal">${Number(balance).toFixed(2)}</span>
+                <span className="nav-bal">
+                  ${Number(balance).toFixed(2)}
+                </span>
               )}
             </button>
           </nav>
         </div>
 
-        {/* Right */}
         <div className="header-right">
-          {/* Mobile nav buttons */}
           <button
             className={`mobile-nav-btn ${activePage === 'history' ? 'active' : ''}`}
             onClick={() => onNavigate(activePage === 'history' ? 'trade' : 'history')}
             aria-label="History"
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M7.5 4.5v3l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" />
+              <path
+                d="M7.5 4.5v3l2 1.5"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <span className="mobile-btn-label">History</span>
           </button>
@@ -54,14 +66,32 @@ export default function Header({ activePage, onNavigate }) {
             aria-label="Portfolio"
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <rect x="1.5" y="4" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M5 4V3a2 2 0 0 1 4 0v1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <rect x="1.5" y="4" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+              <path
+                d="M5 4V3a2 2 0 0 1 4 0v1"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+              />
             </svg>
             <span className="mobile-btn-label">Portfolio</span>
           </button>
 
           <div className="rk-wrap">
-            <ConnectButton showBalance={false} chainStatus="none" accountStatus="avatar" />
+            {isConnected ? (
+              <button
+                className="disconnect-btn"
+                onClick={() => disconnect()}
+              >
+                Disconnect
+              </button>
+            ) : (
+              <ConnectButton
+                showBalance={false}
+                chainStatus="none"
+                accountStatus="avatar"
+              />
+            )}
           </div>
         </div>
       </header>

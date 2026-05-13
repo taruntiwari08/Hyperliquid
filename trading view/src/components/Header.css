@@ -403,3 +403,22 @@
     font-size: 10px;
   }
 }
+
+.disconnect-btn {
+  height: 36px;
+  padding: 0 14px;
+  background: rgba(255, 77, 106, 0.08);
+  border: 1px solid rgba(255, 77, 106, 0.2);
+  color: var(--red);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all var(--t);
+}
+
+.disconnect-btn:hover {
+  background: rgba(255, 77, 106, 0.16);
+  border-color: rgba(255, 77, 106, 0.35);
+}

@@ -405,3 +405,36 @@
   .trade-panel { padding: 12px; gap: 10px; }
   .price-current { font-size: 18px; }
 }
+
+/* ── RainbowKit ── */
+.rk-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rk-wrap button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  min-height: 38px !important;
+  padding: 0 16px !important;
+
+  background: rgba(0,212,255,0.08) !important;
+  border: 1px solid rgba(0,212,255,0.2) !important;
+  color: var(--cyan) !important;
+
+  font-family: var(--font) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+
+  border-radius: var(--r-md) !important;
+
+  transition: all var(--t) !important;
+}
+
+.rk-wrap button:hover {
+  background: rgba(0,212,255,0.15) !important;
+}

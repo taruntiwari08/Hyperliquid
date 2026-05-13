@@ -402,7 +402,7 @@ export default function TradePanel({ coin, setCoin }) {
 
         {/* CTA */}
         {!isConnected ? (
-          <div className="connect-cta">
+          <div className="rk-wrap">
             <ConnectButton />
           </div>
         ) : (
