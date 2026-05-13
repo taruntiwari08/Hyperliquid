@@ -17,7 +17,7 @@ import {
 } from "@tanstack/react-query";
 
 
-const projectId = "6dd15a3684137adf8eb5ed126f061236";
+const projectId = '6dd15a3684137adf8eb5ed126f061236';
 
 // ✅ Only sele
 
