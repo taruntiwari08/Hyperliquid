@@ -3,12 +3,14 @@ import { BASE_URL } from "../config/base";
 
 export function usePositions(address) {
     const [positions, setPositions] = useState([]);
+    const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         if (!address) {
             setPositions([]);
+            setSummary(null);
             return;
         }
 
@@ -18,62 +20,27 @@ export function usePositions(address) {
             try {
                 setLoading(true);
 
-                const [positionsRes, pricesRes] = await Promise.all([
-                    fetch(`${BASE_URL}/positions/${address}`),
-                    fetch(`${BASE_URL}/market-contexts`),
-                ]);
+                const res = await fetch(`${BASE_URL}/positions/${address}`);
+                const data = await res.json();
 
-                const positionsData = await positionsRes.json();
-                const prices = await pricesRes.json();
-
-                const activePositions = (positionsData.positions || [])
-                    .filter((item) => Number(item.position?.szi || 0) !== 0)
-                    .map((item) => {
-                        const p = item.position;
-
-                        const coin = p.coin;
-                        const rawSize = Number(p.szi || 0);
-                        const absSize = Math.abs(rawSize);
-                        const entryPrice = Number(p.entryPx || 0);
-                        const markPrice = Number(prices?.[coin] || 0);
-
-                        const isLong = rawSize > 0;
-                        const side = isLong ? "LONG" : "SHORT";
-
-                        const pnl = Number(p.unrealizedPnl || 0);
-                        const pnlPercent = Number(p.returnOnEquity || 0) * 100;
-
-                        return {
-                            coin,
-                            side,
-                            isLong,
-
-                            size: rawSize,
-                            absSize,
-
-                            entryPrice,
-                            markPrice,
-
-                            pnl,
-                            pnlPercent,
-
-                            // ✅ REAL values from Hyperliquid
-                            liquidationPrice: Number(p.liquidationPx || 0),
-                            marginUsed: Number(p.marginUsed || 0),
-                            positionValue: Number(p.positionValue || 0),
-                            leverage: Number(p.leverage?.value || 0),
-                            maxLeverage: Number(p.maxLeverage || 0),
-
-                            raw: item,
-                        };
-                    });
+                if (!res.ok) {
+                    throw new Error(data?.error || "Failed to fetch positions");
+                }
 
                 if (isMounted) {
-                    setPositions(activePositions);
+                    setPositions(Array.isArray(data.positions) ? data.positions : []);
+
+                    setSummary({
+                        accountValue: data.accountValue || "0",
+                        withdrawable: data.withdrawable || "0",
+                        totalMarginUsed: data.totalMarginUsed || "0",
+                    });
+
                     setError(null);
                 }
             } catch (err) {
                 console.log("Positions error:", err);
+
                 if (isMounted) {
                     setError(err.message || "Failed to fetch positions");
                 }
@@ -94,5 +61,10 @@ export function usePositions(address) {
         };
     }, [address]);
 
-    return { positions, loading, error };
+    return {
+        positions,
+        summary,
+        loading,
+        error,
+    };
 }

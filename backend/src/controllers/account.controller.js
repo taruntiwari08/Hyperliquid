@@ -138,15 +138,108 @@ export async function getPositions(req, res) {
             user: address,
         });
 
+        const metaAndCtxs = await infoClient.metaAndAssetCtxs();
+
+        const universe = metaAndCtxs?.[0]?.universe || [];
+        const assetCtxs = metaAndCtxs?.[1] || [];
+
+        const marketMap = {};
+
+        universe.forEach((asset, index) => {
+            const ctx = assetCtxs[index] || {};
+
+            marketMap[asset.name] = {
+                coin: asset.name,
+                maxLeverage: asset.maxLeverage,
+                markPx: ctx.markPx,
+                oraclePx: ctx.oraclePx,
+                midPx: ctx.midPx,
+                funding: ctx.funding,
+                openInterest: ctx.openInterest,
+                dayNtlVlm: ctx.dayNtlVlm,
+                prevDayPx: ctx.prevDayPx,
+            };
+        });
+
+        const positions = (state?.assetPositions || [])
+            .filter((item) => Number(item?.position?.szi || 0) !== 0)
+            .map((item) => {
+                const p = item.position || {};
+
+                const coin = p.coin;
+                const market = marketMap[coin] || {};
+
+                const rawSize = Number(p.szi || 0);
+                const absSize = Math.abs(rawSize);
+
+                const entryPrice = Number(p.entryPx || 0);
+
+                const markPrice = Number(
+                    market.markPx ||
+                    market.midPx ||
+                    market.oraclePx ||
+                    0
+                );
+
+                const positionValue =
+                    Number(p.positionValue || 0) ||
+                    absSize * markPrice;
+
+                const leverage =
+                    Number(p.leverage?.value || 0) ||
+                    (Number(p.marginUsed || 0) > 0
+                        ? positionValue / Number(p.marginUsed || 1)
+                        : 0);
+
+                const liquidationPx =
+                    p.liquidationPx ??
+                    p.liqPx ??
+                    p.liquidationPrice ??
+                    null;
+
+                return {
+                    coin,
+
+                    side: rawSize > 0 ? "LONG" : "SHORT",
+                    isLong: rawSize > 0,
+
+                    size: rawSize,
+                    absSize,
+
+                    entryPrice,
+                    markPrice,
+                    oraclePrice: Number(market.oraclePx || 0),
+                    midPrice: Number(market.midPx || 0),
+
+                    pnl: Number(p.unrealizedPnl || 0),
+                    pnlPercent: Number(p.returnOnEquity || 0) * 100,
+
+                    liquidationPrice:
+                        liquidationPx !== null && liquidationPx !== undefined
+                            ? Number(liquidationPx)
+                            : null,
+
+                    marginUsed: Number(p.marginUsed || 0),
+                    positionValue,
+                    leverage,
+                    maxLeverage: Number(market.maxLeverage || 0),
+
+                    raw: item,
+                };
+            });
+
         res.json({
             address,
-            positions: state?.assetPositions || [],
+            accountValue: state?.marginSummary?.accountValue || "0",
+            withdrawable: state?.withdrawable || "0",
+            totalMarginUsed: state?.marginSummary?.totalMarginUsed || "0",
+            positions,
         });
     } catch (err) {
         console.error("❌ POSITIONS ERROR:", err);
 
         res.status(500).json({
-            error: err.message,
+            error: err.message || "failed to fetch positions",
         });
     }
 }
